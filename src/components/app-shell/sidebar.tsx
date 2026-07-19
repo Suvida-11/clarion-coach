@@ -49,7 +49,6 @@ export function Sidebar() {
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               }`}
-            >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="truncate">{label}</span>
               {active && (
