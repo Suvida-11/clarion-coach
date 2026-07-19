@@ -10,7 +10,14 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/new-session", label: "New Session", icon: PlusCircle },
   { to: "/app/console/sess_a91k2", label: "Live Console", icon: MessageSquareText },
@@ -18,7 +25,7 @@ const nav = [
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/reports/sess_88f0x", label: "Reports", icon: FileText },
   { to: "/app/settings", label: "Settings", icon: SettingsIcon },
-] as const;
+];
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
