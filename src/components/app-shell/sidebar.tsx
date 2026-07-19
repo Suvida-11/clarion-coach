@@ -38,22 +38,24 @@ export function Sidebar() {
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {nav.map(({ to, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === to : pathname.startsWith(to.split("/").slice(0, 3).join("/"));
+        {nav.map((item) => {
+          const Icon = item.icon;
+          const active = item.exact
+            ? pathname === item.to
+            : pathname.startsWith(item.to.split("/").slice(0, 3).join("/"));
           return (
             <Link
-              key={to}
-              to={to}
+              key={item.to}
+              to={item.to}
               className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               }`}
+            >
               <Icon className="h-4 w-4 shrink-0" />
-              <span className="truncate">{label}</span>
-              {active && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
-              )}
+              <span className="truncate">{item.label}</span>
+              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
             </Link>
           );
         })}
