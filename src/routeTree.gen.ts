@@ -9,12 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppNewSessionRouteImport } from './routes/app.new-session'
+import { Route as AppKnowledgeRouteImport } from './routes/app.knowledge'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppReportsSessionIdRouteImport } from './routes/app.reports.$sessionId'
+import { Route as AppConsoleSessionIdRouteImport } from './routes/app.console.$sessionId'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -40,47 +53,152 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNewSessionRoute = AppNewSessionRouteImport.update({
+  id: '/new-session',
+  path: '/new-session',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKnowledgeRoute = AppKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsSessionIdRoute = AppReportsSessionIdRouteImport.update({
+  id: '/reports/$sessionId',
+  path: '/reports/$sessionId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsoleSessionIdRoute = AppConsoleSessionIdRouteImport.update({
+  id: '/console/$sessionId',
+  path: '/console/$sessionId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/knowledge': typeof AppKnowledgeRoute
+  '/app/new-session': typeof AppNewSessionRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/console/$sessionId': typeof AppConsoleSessionIdRoute
+  '/app/reports/$sessionId': typeof AppReportsSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/knowledge': typeof AppKnowledgeRoute
+  '/app/new-session': typeof AppNewSessionRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app': typeof AppIndexRoute
+  '/app/console/$sessionId': typeof AppConsoleSessionIdRoute
+  '/app/reports/$sessionId': typeof AppReportsSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/knowledge': typeof AppKnowledgeRoute
+  '/app/new-session': typeof AppNewSessionRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/console/$sessionId': typeof AppConsoleSessionIdRoute
+  '/app/reports/$sessionId': typeof AppReportsSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/forgot-password' | '/login' | '/signup'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/forgot-password'
+    | '/login'
+    | '/signup'
+    | '/sitemap.xml'
+    | '/app/analytics'
+    | '/app/knowledge'
+    | '/app/new-session'
+    | '/app/settings'
+    | '/app/'
+    | '/app/console/$sessionId'
+    | '/app/reports/$sessionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/forgot-password' | '/login' | '/signup'
-  id: '__root__' | '/' | '/app' | '/forgot-password' | '/login' | '/signup'
+  to:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/signup'
+    | '/sitemap.xml'
+    | '/app/analytics'
+    | '/app/knowledge'
+    | '/app/new-session'
+    | '/app/settings'
+    | '/app'
+    | '/app/console/$sessionId'
+    | '/app/reports/$sessionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/forgot-password'
+    | '/login'
+    | '/signup'
+    | '/sitemap.xml'
+    | '/app/analytics'
+    | '/app/knowledge'
+    | '/app/new-session'
+    | '/app/settings'
+    | '/app/'
+    | '/app/console/$sessionId'
+    | '/app/reports/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -116,15 +234,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/new-session': {
+      id: '/app/new-session'
+      path: '/new-session'
+      fullPath: '/app/new-session'
+      preLoaderRoute: typeof AppNewSessionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/knowledge': {
+      id: '/app/knowledge'
+      path: '/knowledge'
+      fullPath: '/app/knowledge'
+      preLoaderRoute: typeof AppKnowledgeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports/$sessionId': {
+      id: '/app/reports/$sessionId'
+      path: '/reports/$sessionId'
+      fullPath: '/app/reports/$sessionId'
+      preLoaderRoute: typeof AppReportsSessionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/console/$sessionId': {
+      id: '/app/console/$sessionId'
+      path: '/console/$sessionId'
+      fullPath: '/app/console/$sessionId'
+      preLoaderRoute: typeof AppConsoleSessionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppKnowledgeRoute: typeof AppKnowledgeRoute
+  AppNewSessionRoute: typeof AppNewSessionRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppConsoleSessionIdRoute: typeof AppConsoleSessionIdRoute
+  AppReportsSessionIdRoute: typeof AppReportsSessionIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppKnowledgeRoute: AppKnowledgeRoute,
+  AppNewSessionRoute: AppNewSessionRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppConsoleSessionIdRoute: AppConsoleSessionIdRoute,
+  AppReportsSessionIdRoute: AppReportsSessionIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
