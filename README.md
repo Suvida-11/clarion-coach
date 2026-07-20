@@ -231,7 +231,7 @@ Response Returned to User
 ## Contributors
 
 - **Suvida S**
-- Project Contributors
+
 
 ---
 
