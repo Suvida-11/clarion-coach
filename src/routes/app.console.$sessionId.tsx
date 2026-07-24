@@ -267,6 +267,9 @@ function Console() {
           </ScrollArea>
         </section>
       </div>
+
+      {/* Agent Execution Pipeline */}
+      <AgentExecutionPanel trace={latest?.agent_trace} />
     </div>
   );
 }
