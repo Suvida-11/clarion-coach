@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
 
 export const Route = createFileRoute("/app/console/$sessionId")({
   head: () => ({ meta: [{ title: "Live Coaching Console — Clario AI" }] }),
@@ -77,7 +78,7 @@ function Console() {
   const kb = latest?.knowledge ?? [];
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3 pb-6">
       {/* Session header + risk */}
       <div className="glass grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl p-3 sm:flex sm:justify-between">
         <div className="min-w-0">
@@ -113,7 +114,7 @@ function Console() {
       )}
 
       {/* Three-panel workspace */}
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.2fr_1.3fr_1fr]">
+      <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.2fr_1.3fr_1fr]">
         {/* LEFT: Conversation */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <PanelHeader title="Conversation" subtitle={`${messages.length} turns`} />
@@ -266,6 +267,9 @@ function Console() {
           </ScrollArea>
         </section>
       </div>
+
+      {/* Agent Execution Pipeline */}
+      <AgentExecutionPanel trace={latest?.agent_trace} />
     </div>
   );
 }

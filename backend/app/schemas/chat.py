@@ -75,6 +75,15 @@ class ChatRequest(BaseModel):
     role: Literal["customer", "agent"]
 
 
+class AgentTraceEntry(BaseModel):
+    agent: str
+    status: Literal["Completed", "Running", "Failed", "Skipped"] = "Completed"
+    execution_time: str = "0 ms"
+    summary: str = ""
+    timestamp: str = ""
+    details: dict = Field(default_factory=dict)
+
+
 class ChatTurnResponse(BaseModel):
     turn: ChatMessage
     simulated_customer_reply: Optional[ChatMessage] = None
@@ -88,6 +97,7 @@ class ChatTurnResponse(BaseModel):
     knowledge_recommendations: list[dict] = Field(default_factory=list)
     risk_level: Optional[str] = None
     conversation_summary: Optional[str] = None
+    agent_trace: list[AgentTraceEntry] = Field(default_factory=list)
 
 
 class KnowledgeDocument(BaseModel):
