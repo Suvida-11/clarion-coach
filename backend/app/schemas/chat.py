@@ -82,6 +82,12 @@ class ChatTurnResponse(BaseModel):
     coaching: CoachingSuggestion
     knowledge: list[RetrievedChunk] = Field(default_factory=list)
     risk: EscalationRisk
+    # Extended contract (additive; existing frontend ignores unknown fields)
+    customer_message: Optional[str] = None
+    intent_analysis: Optional[IntentAnalysis] = None
+    knowledge_recommendations: list[dict] = Field(default_factory=list)
+    risk_level: Optional[str] = None
+    conversation_summary: Optional[str] = None
 
 
 class KnowledgeDocument(BaseModel):

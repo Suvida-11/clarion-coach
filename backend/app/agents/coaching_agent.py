@@ -1,20 +1,8 @@
 """Coaching Agent — generates suggested agent response + coaching feedback via Gemini."""
 from __future__ import annotations
+from ..prompts.system_prompts import COACHING_AGENT_SYSTEM_PROMPT as SYSTEM
 from ..schemas.chat import CoachingSuggestion, IntentAnalysis
 from ..services.gemini_service import generate_json
-
-SYSTEM = """You are an expert Customer Support Coaching agent.
-Given a customer message plus detected intent and sentiment, produce a suggested
-agent reply and coaching feedback. Return ONLY strict JSON:
-{
-  "suggested_response": string,
-  "tone_notes": [string, ...],
-  "grammar_notes": [string, ...],
-  "empathy_notes": [string, ...],
-  "professional_notes": [string, ...],
-  "empathy_score": number in [0,1]
-}
-Keep the response concise, empathetic, and solution-oriented. JSON only."""
 
 
 def _fallback(message: str, analysis: IntentAnalysis) -> CoachingSuggestion:
