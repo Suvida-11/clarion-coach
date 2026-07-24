@@ -61,6 +61,15 @@ export interface EscalationRisk {
   recommended_action: string;
 }
 
+export interface AgentTraceEntry {
+  agent: string;
+  status: "Completed" | "Running" | "Failed" | "Skipped";
+  execution_time: string;
+  summary: string;
+  timestamp?: string;
+  details?: Record<string, unknown>;
+}
+
 export interface ChatTurnResponse {
   turn: ChatMessage;
   simulated_customer_reply?: ChatMessage;
@@ -68,6 +77,7 @@ export interface ChatTurnResponse {
   coaching: CoachingSuggestion;
   knowledge: RetrievedChunk[];
   risk: EscalationRisk;
+  agent_trace?: AgentTraceEntry[];
 }
 
 export interface KnowledgeDocument {
