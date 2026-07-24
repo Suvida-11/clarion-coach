@@ -78,7 +78,7 @@ function Console() {
   const kb = latest?.knowledge ?? [];
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3 pb-6">
       {/* Session header + risk */}
       <div className="glass grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl p-3 sm:flex sm:justify-between">
         <div className="min-w-0">
