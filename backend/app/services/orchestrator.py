@@ -1,20 +1,25 @@
-"""Orchestrator: coordinates intent + coaching agents, RAG, risk, and simulator."""
+"""Orchestrator: coordinates the 6-agent pipeline.
+
+Simulator mode:  Customer Simulator -> Intent -> Knowledge -> Coaching -> Risk
+Manual mode:     Intent -> Knowledge -> Coaching -> Risk
+Replay mode:     Replays stored turns (no Gemini calls)
+"""
 from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
 from ..agents.coaching_agent import coach
+from ..agents.customer_simulator_agent import simulate_customer
 from ..agents.intent_agent import analyze_intent
+from ..agents.knowledge_recommendation_agent import recommend
 from ..schemas.chat import (
     ChatMessage,
     ChatRequest,
     ChatTurnResponse,
     EscalationRisk,
     IntentAnalysis,
-    RetrievedChunk,
 )
-from . import rag
-from .gemini_service import generate_text
+from . import store
 
 
 def _now() -> str:
@@ -31,7 +36,12 @@ def _new_msg(role: str, content: str) -> ChatMessage:
 
 
 def _risk_from(analysis: IntentAnalysis) -> EscalationRisk:
-    prob = min(1.0, 0.4 * analysis.frustration + 0.3 * analysis.urgency + (0.3 if analysis.sentiment == "very_negative" else 0.0))
+    prob = min(
+        1.0,
+        0.4 * analysis.frustration
+        + 0.3 * analysis.urgency
+        + (0.3 if analysis.sentiment == "very_negative" else 0.0),
+    )
     if prob >= 0.8:
         level, action = "critical", "Escalate to senior specialist immediately"
     elif prob >= 0.6:
@@ -48,38 +58,68 @@ def _risk_from(analysis: IntentAnalysis) -> EscalationRisk:
     )
 
 
-def _simulate_customer(persona: str | None, scenario: str | None, agent_reply: str) -> str:
-    prompt = (
-        f"You are simulating a customer with persona '{persona or 'Angry'}'. "
-        f"Scenario: {scenario or 'A support issue'}. "
-        f"The support agent just said: \"{agent_reply}\". "
-        "Reply in 1-3 sentences as the customer would, staying in character. No prefix."
-    )
-    text = generate_text(prompt)
-    return text or "That's not really solving my problem. Can you actually help me here?"
+def _pipeline(customer_message: str) -> tuple[IntentAnalysis, list, list, EscalationRisk, object]:
+    """Intent -> Knowledge -> Coaching -> Risk."""
+    analysis = analyze_intent(customer_message)
+    knowledge, kb_payload = recommend(customer_message, k=3)
+    coaching = coach(customer_message, analysis)
+    risk = _risk_from(analysis)
+    return analysis, knowledge, kb_payload["documents"], risk, coaching
 
 
-def handle_chat(req: ChatRequest, persona: str | None = None, scenario: str | None = None) -> ChatTurnResponse:
+def handle_chat(
+    req: ChatRequest,
+    persona: str | None = None,
+    scenario: str | None = None,
+) -> ChatTurnResponse:
     turn = _new_msg(req.role, req.message)
+    sess = store.get_session(req.session_id)
+    mode = sess.config.mode if sess else "manual"
 
-    if req.role == "customer":
-        # Customer speaks -> analyze + coach agent
-        analysis = analyze_intent(req.message)
-        coaching = coach(req.message, analysis)
-        knowledge = rag.search(req.message, k=4)
-        risk = _risk_from(analysis)
+    # Replay mode: no AI calls, echo minimal structure.
+    if mode == "replay":
+        empty_analysis = IntentAnalysis(intent="General Inquiry", sentiment="neutral")
+        risk = _risk_from(empty_analysis)
+        from ..agents.coaching_agent import _fallback as _coach_fb  # type: ignore
+        coaching = _coach_fb(req.message, empty_analysis)
         return ChatTurnResponse(
-            turn=turn, analysis=analysis, coaching=coaching,
-            knowledge=knowledge, risk=risk,
+            turn=turn,
+            analysis=empty_analysis,
+            coaching=coaching,
+            knowledge=[],
+            risk=risk,
+            customer_message=req.message if req.role == "customer" else None,
+            intent_analysis=empty_analysis,
+            risk_level=risk.level,
         )
 
-    # role == "agent": simulate customer reply, then analyze that reply
-    simulated_content = _simulate_customer(persona, scenario, req.message)
+    # Manual mode OR customer speaking in simulator: analyze the incoming message.
+    if req.role == "customer" or mode == "manual":
+        analysis, knowledge, kb_docs, risk, coaching = _pipeline(req.message)
+        return ChatTurnResponse(
+            turn=turn,
+            analysis=analysis,
+            coaching=coaching,
+            knowledge=knowledge,
+            risk=risk,
+            customer_message=req.message,
+            intent_analysis=analysis,
+            knowledge_recommendations=kb_docs,
+            risk_level=risk.level,
+        )
+
+    # Simulator mode + agent turn:
+    # 1) Customer Simulator generates the next customer reply.
+    # 2) Run the full pipeline over that simulated message.
+    history = [
+        {"role": m.role, "content": m.content}
+        for m in (sess.messages if sess and hasattr(sess, "messages") else [])
+    ]
+    sim = simulate_customer(persona, scenario, req.message, history=history)
+    simulated_content = sim.get("customer_message") or ""
     simulated = _new_msg("customer", simulated_content)
-    analysis = analyze_intent(simulated_content)
-    coaching = coach(simulated_content, analysis)
-    knowledge = rag.search(simulated_content, k=4)
-    risk = _risk_from(analysis)
+
+    analysis, knowledge, kb_docs, risk, coaching = _pipeline(simulated_content)
     return ChatTurnResponse(
         turn=turn,
         simulated_customer_reply=simulated,
@@ -87,4 +127,9 @@ def handle_chat(req: ChatRequest, persona: str | None = None, scenario: str | No
         coaching=coaching,
         knowledge=knowledge,
         risk=risk,
+        customer_message=simulated_content,
+        intent_analysis=analysis,
+        knowledge_recommendations=kb_docs,
+        risk_level=risk.level,
+        conversation_summary=sim.get("conversation_stage"),
     )
