@@ -114,7 +114,7 @@ function Console() {
       )}
 
       {/* Three-panel workspace */}
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.2fr_1.3fr_1fr]">
+      <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.2fr_1.3fr_1fr]">
         {/* LEFT: Conversation */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <PanelHeader title="Conversation" subtitle={`${messages.length} turns`} />
