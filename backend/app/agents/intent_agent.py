@@ -1,5 +1,6 @@
 """Intent Detection Agent — classifies customer intent + sentiment via Gemini."""
 from __future__ import annotations
+from ..prompts.system_prompts import INTENT_AGENT_SYSTEM_PROMPT as SYSTEM
 from ..schemas.chat import IntentAnalysis
 from ..services.gemini_service import generate_json
 
@@ -11,19 +12,6 @@ INTENTS = [
     "Complaint",
     "Order Status",
 ]
-
-SYSTEM = """You are an Intent Detection agent for a customer support platform.
-Classify the customer's message and return ONLY strict JSON with keys:
-{
-  "intent": one of ["Refund Request","Payment Issue","Technical Support","General Inquiry","Complaint","Order Status"],
-  "sentiment": one of ["positive","neutral","negative","very_negative"],
-  "sentiment_score": number in [-1,1],
-  "frustration": number in [0,1],
-  "urgency": number in [0,1],
-  "confidence": number in [0,1],
-  "satisfaction_trend": one of ["improving","steady","declining"]
-}
-No prose. No markdown. JSON only."""
 
 
 def _fallback(message: str) -> IntentAnalysis:
