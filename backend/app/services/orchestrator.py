@@ -72,7 +72,7 @@ def _risk_from(analysis: IntentAnalysis) -> EscalationRisk:
     )
 
 
-def _pipeline(customer_message: str, trace: list[AgentTraceEntry]):
+def _pipeline(customer_message: str, trace: list[AgentTraceEntry], session_id: str | None = None):
     """Intent -> Knowledge -> Coaching -> Risk with trace recording."""
     t0 = time.perf_counter()
     analysis = analyze_intent(customer_message)
@@ -105,7 +105,7 @@ def _pipeline(customer_message: str, trace: list[AgentTraceEntry]):
     ))
 
     t2 = time.perf_counter()
-    prev_turns = store.session_turns(_current_sid.get()) if _current_sid.get() else []
+    prev_turns = store.session_turns(session_id) if session_id else []
     prev_suggestions = [t.coaching.suggested_response for t in prev_turns[-6:]]
     prev_tips: list[str] = []
     for t in prev_turns[-4:]:
