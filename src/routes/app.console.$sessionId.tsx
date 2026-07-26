@@ -140,6 +140,14 @@ function Console() {
   const analysis = latest?.analysis;
   const coaching = latest?.coaching;
   const kb = latest?.knowledge ?? [];
+  const emotionTimeline = useMemo<EmotionPoint[]>(() => {
+    return analysisHistory.map((h, i) => {
+      const emo = deriveEmotionFromAnalysis(h.analysis);
+      const value =
+        emo === "happy" ? 2 : emo === "neutral" ? 0 : emo === "confused" ? -1 : emo === "frustrated" ? -1.5 : -2;
+      return { turn: i + 1, emotion: emo, value };
+    });
+  }, [analysisHistory]);
   const emotion = deriveEmotion(analysis);
 
   return (
