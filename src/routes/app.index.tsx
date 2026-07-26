@@ -110,6 +110,9 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Live session cards */}
+      <LiveSessionCards session={latest.data} isLoading={latest.isLoading} />
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {stats.map((s) => {
