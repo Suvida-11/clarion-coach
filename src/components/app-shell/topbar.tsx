@@ -26,6 +26,10 @@ function useCrumbs() {
 
 export function Topbar() {
   const crumbs = useCrumbs();
+  const user = useCurrentUser();
+  const displayName = user?.name ?? "Guest";
+  const displayEmail = user?.email ?? "";
+  const short = user ? firstName(user.name) : "Guest";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur-xl md:px-6">
