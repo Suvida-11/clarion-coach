@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useState } from "react";
+import { setCurrentUser } from "@/lib/user";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
