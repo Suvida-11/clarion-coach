@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { ChatMessage, ChatTurnResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Send,
   AlertTriangle,
   Sparkles,
-  ThumbsUp,
-  Type as TypeIcon,
-  Heart,
-  Award,
   User,
   Bot,
   Pause,
@@ -30,16 +25,22 @@ import {
   Meh,
   Angry as AngryIcon,
   HelpCircle,
+  Brain,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
 import { Input } from "@/components/ui/input";
+import { IntentAnalysisPanel, type EmotionPoint, deriveEmotionFromAnalysis } from "@/components/IntentAnalysisPanel";
+import { CoachingPanel } from "@/components/CoachingPanel";
+import { KnowledgePanel } from "@/components/KnowledgePanel";
 
 export const Route = createFileRoute("/app/console/$sessionId")({
   head: () => ({ meta: [{ title: "Live Coaching Console — Clario AI" }] }),
   component: Console,
 });
+
 
 function Console() {
   const { sessionId } = Route.useParams();
