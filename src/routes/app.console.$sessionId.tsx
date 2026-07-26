@@ -188,6 +188,7 @@ function Console() {
                 setEnded(false);
                 setPaused(false);
                 setReplayIndex(null);
+                setAnalysisHistory([]);
                 toast.success("Simulation reset");
               }}
               title="Reset"
