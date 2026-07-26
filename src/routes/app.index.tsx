@@ -43,6 +43,7 @@ export const Route = createFileRoute("/app/")({
 
 
 function Dashboard() {
+  const user = useCurrentUser();
   const analytics = useQuery({ queryKey: ["analytics"], queryFn: api.analytics });
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: api.sessionHistory });
   const latest = useQuery({
