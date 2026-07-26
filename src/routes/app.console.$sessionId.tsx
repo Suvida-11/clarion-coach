@@ -61,6 +61,7 @@ function Console() {
   const [ended, setEnded] = useState(false);
   const [search, setSearch] = useState("");
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
+  const [analysisHistory, setAnalysisHistory] = useState<ChatTurnResponse[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
