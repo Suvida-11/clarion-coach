@@ -10,6 +10,10 @@ import {
   TrendingUp,
   ArrowUpRight,
   PlusCircle,
+  Radio,
+  Brain,
+  Activity,
+  Gauge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +30,16 @@ import {
   AreaChart,
 } from "recharts";
 import { formatDistanceToNow } from "date-fns";
+import {
+  deriveEmotionFromAnalysis,
+  AgentEmotionBadge,
+} from "@/components/IntentAnalysisPanel";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({ meta: [{ title: "Dashboard — Clario AI" }] }),
   component: Dashboard,
 });
+
 
 function Dashboard() {
   const analytics = useQuery({ queryKey: ["analytics"], queryFn: api.analytics });
