@@ -110,8 +110,10 @@ function Console() {
     setMessages([]);
     setLatest(null);
     setReplayIndex(null);
+    setAnalysisHistory([]);
     toast.success("Conversation cleared");
   }
+
 
   function replayConversation() {
     if (!messages.length) return;
