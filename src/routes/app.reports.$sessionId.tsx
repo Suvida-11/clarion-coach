@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,9 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { Award, AlertCircle, ArrowUpRight, Download, Sparkles } from "lucide-react";
+import { Award, AlertCircle, ArrowUpRight, Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { getCurrentUser } from "@/lib/user";
 
 export const Route = createFileRoute("/app/reports/$sessionId")({
   head: () => ({ meta: [{ title: "Post-Interaction Report — Clario AI" }] }),
