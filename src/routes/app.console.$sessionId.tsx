@@ -434,64 +434,6 @@ function MessageBubble({ m }: { m: ChatMessage }) {
   );
 }
 
-function Metric({ label, value, accent = "text-foreground" }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className="glass rounded-lg p-3">
-      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-sm font-semibold capitalize ${accent}`}>{value}</div>
-    </div>
-  );
-}
-
-function Bar({ label, value, tone }: { label: string; value: number; tone: "destructive" | "warning" | "primary" }) {
-  const toneClass = {
-    destructive: "bg-destructive",
-    warning: "bg-warning",
-    primary: "bg-primary",
-  }[tone];
-  return (
-    <div className="glass rounded-lg p-3">
-      <div className="mb-1 flex items-center justify-between text-[10px]">
-        <span className="uppercase text-muted-foreground">{label}</span>
-        <span className="font-semibold">{(value * 100).toFixed(0)}%</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-border">
-        <div className={`h-full ${toneClass}`} style={{ width: `${value * 100}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function CoachSection({ icon: Icon, label, items }: { icon: typeof Sparkles; label: string; items: string[] }) {
-  if (!items.length) return null;
-  return (
-    <div>
-      <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
-        <Icon className="h-3 w-3" /> {label}
-      </h4>
-      <ul className="space-y-1.5">
-        {items.map((i) => (
-          <li key={i} className="flex items-start gap-2 text-xs">
-            <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-primary" />
-            <span className="text-foreground/90">{i}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function EmptyState({ icon: Icon, title, body }: { icon: typeof Sparkles; title: string; body: string }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <div className="mb-3 grid h-10 w-10 place-items-center rounded-full bg-accent">
-        <Icon className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <div className="font-medium">{title}</div>
-      <p className="mt-1 text-xs text-muted-foreground">{body}</p>
-    </div>
-  );
-}
 
 type Emotion = "Happy" | "Neutral" | "Confused" | "Frustrated" | "Angry";
 
