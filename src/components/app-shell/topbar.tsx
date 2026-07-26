@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Fragment } from "react";
+import { useCurrentUser, clearCurrentUser, initials, firstName } from "@/lib/user";
 
 function useCrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
