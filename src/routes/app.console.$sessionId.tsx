@@ -324,98 +324,51 @@ function Console() {
           </div>
         </section>
 
-        {/* CENTER: Coaching */}
+        {/* Intent & sentiment side panel */}
+        <section className="surface flex min-h-0 flex-col rounded-2xl">
+          <PanelHeader
+            title="Intent & Sentiment"
+            subtitle={analysis ? `conf ${(analysis.confidence * 100).toFixed(0)}%` : "awaiting"}
+            icon={Brain}
+          />
+          <ScrollArea className="flex-1 p-4">
+            <IntentAnalysisPanel
+              analysis={analysis}
+              risk={risk}
+              emotionTimeline={emotionTimeline}
+            />
+          </ScrollArea>
+        </section>
+
+        {/* Coaching panel */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <PanelHeader
             title="AI Coaching"
-            subtitle="Intent · Sentiment · Suggestions"
+            subtitle="Real-time guidance"
+            icon={Sparkles}
           />
           <ScrollArea className="flex-1 p-4">
-            {!latest ? (
-              <EmptyState
-                icon={Sparkles}
-                title="Waiting for the first turn"
-                body="Send a message to activate the coaching agents."
-              />
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <Metric label="Intent" value={analysis!.intent} />
-                  <Metric
-                    label="Sentiment"
-                    value={analysis!.sentiment.replace("_", " ")}
-                    accent={
-                      analysis!.sentiment_score > 0
-                        ? "text-success"
-                        : analysis!.sentiment_score < -0.3
-                          ? "text-destructive"
-                          : "text-warning"
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Bar label="Frustration" value={analysis!.frustration} tone="destructive" />
-                  <Bar label="Urgency" value={analysis!.urgency} tone="warning" />
-                  <Bar label="Confidence" value={analysis!.confidence} tone="primary" />
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
-                    <Sparkles className="h-3 w-3" /> Suggested response
-                  </h4>
-                  <div className="glass rounded-lg p-3 text-sm leading-relaxed">
-                    {coaching!.suggested_response}
-                  </div>
-                </div>
-
-                <CoachSection icon={TypeIcon} label="Tone" items={coaching!.tone_notes} />
-                <CoachSection icon={Heart} label="Empathy" items={coaching!.empathy_notes} />
-                <CoachSection icon={ThumbsUp} label="Grammar" items={coaching!.grammar_notes} />
-                <CoachSection icon={Award} label="Professionalism" items={coaching!.professional_notes} />
-              </div>
-            )}
+            <CoachingPanel
+              coaching={coaching}
+              risk={risk}
+              onUseSuggestion={(t) => setInput(t)}
+            />
           </ScrollArea>
         </section>
 
-        {/* RIGHT: Knowledge */}
+        {/* Knowledge recommendation panel */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <PanelHeader
-            title="Knowledge Recommendations"
-            subtitle={`${kb.length} sources · RAG`}
+            title="Knowledge Base"
+            subtitle={`${kb.length} matches · RAG`}
+            icon={BookOpen}
           />
           <ScrollArea className="flex-1 p-4">
-            {kb.length === 0 ? (
-              <EmptyState
-                icon={Sparkles}
-                title="No retrievals yet"
-                body="Knowledge chunks appear as the conversation progresses."
-              />
-            ) : (
-              <div className="space-y-3">
-                {kb.map((c) => (
-                  <div key={c.id} className="glass hover-lift rounded-lg p-3">
-                    <div className="mb-1 flex items-center justify-between">
-                      <Badge variant="outline" className="text-[10px]">{c.type}</Badge>
-                      <span className="text-xs font-semibold text-primary">
-                        {(c.similarity * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="text-sm font-semibold">{c.title}</div>
-                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                      {c.preview}
-                    </p>
-                    <div className="mt-2 truncate font-mono text-[10px] text-muted-foreground">
-                      {c.source}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <KnowledgePanel chunks={kb} />
           </ScrollArea>
         </section>
       </div>
+
 
       {/* Agent Execution Pipeline */}
       <AgentExecutionPanel trace={latest?.agent_trace} />
