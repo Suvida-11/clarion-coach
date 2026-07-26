@@ -1,4 +1,14 @@
-export type Persona = "Calm" | "Angry" | "Confused" | "Technical" | "Impatient" | "VIP Customer";
+export type Persona =
+  | "Calm"
+  | "Angry"
+  | "Confused"
+  | "Technical"
+  | "Impatient"
+  | "VIP Customer"
+  | "Beginner"
+  | "Technical User"
+  | "Frustrated"
+  | "Polite";
 export type Mode = "simulator" | "manual" | "replay";
 export type Difficulty = "Easy" | "Medium" | "Hard" | "Expert";
 

@@ -18,10 +18,23 @@ import {
   Award,
   User,
   Bot,
+  Pause,
+  Play,
+  RotateCcw,
+  Square,
+  Download,
+  Trash2,
+  Search,
+  Smile,
+  Frown,
+  Meh,
+  Angry as AngryIcon,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/app/console/$sessionId")({
   head: () => ({ meta: [{ title: "Live Coaching Console — Clario AI" }] }),
@@ -43,6 +56,10 @@ function Console() {
   const [latest, setLatest] = useState<ChatTurnResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [search, setSearch] = useState("");
+  const [replayIndex, setReplayIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +67,7 @@ function Console() {
   }, [messages, typing]);
 
   async function send() {
-    if (!input.trim()) return;
+    if (!input.trim() || paused || ended) return;
     const text = input;
     setInput("");
     setLoading(true);
@@ -72,10 +89,53 @@ function Console() {
     }
   }
 
+  function downloadChat() {
+    const text = messages
+      .map((m) => `[${format(new Date(m.timestamp), "HH:mm:ss")}] ${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clario-session-${sessionId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Transcript downloaded");
+  }
+
+  function clearChat() {
+    setMessages([]);
+    setLatest(null);
+    setReplayIndex(null);
+    toast.success("Conversation cleared");
+  }
+
+  function replayConversation() {
+    if (!messages.length) return;
+    setReplayIndex(0);
+    let i = 0;
+    const interval = setInterval(() => {
+      i += 1;
+      if (i >= messages.length) {
+        setReplayIndex(null);
+        clearInterval(interval);
+        return;
+      }
+      setReplayIndex(i);
+    }, 900);
+  }
+
+  const visibleMessages = search.trim()
+    ? messages.filter((m) => m.content.toLowerCase().includes(search.toLowerCase()))
+    : replayIndex !== null
+      ? messages.slice(0, replayIndex + 1)
+      : messages;
+
   const risk = latest?.risk;
   const analysis = latest?.analysis;
   const coaching = latest?.coaching;
   const kb = latest?.knowledge ?? [];
+  const emotion = deriveEmotion(analysis);
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3 pb-6">
@@ -90,8 +150,9 @@ function Console() {
             Refund dispute — Orbit Wireless Earbuds
           </div>
         </div>
-        {risk && (
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <EmotionBadge emotion={emotion} />
+          {risk && (
             <Badge
               variant={risk.level === "high" || risk.level === "critical" ? "destructive" : "secondary"}
               className="gap-1"
@@ -99,8 +160,53 @@ function Console() {
               <AlertTriangle className="h-3 w-3" />
               {risk.level.toUpperCase()} · {(risk.probability * 100).toFixed(0)}%
             </Badge>
+          )}
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-background/40 p-0.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => setPaused((p) => !p)}
+              disabled={ended}
+              title={paused ? "Resume" : "Pause"}
+            >
+              {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+              {paused ? "Resume" : "Pause"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => {
+                setMessages([]);
+                setLatest(null);
+                setEnded(false);
+                setPaused(false);
+                setReplayIndex(null);
+                toast.success("Simulation reset");
+              }}
+              title="Reset"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+              onClick={() => {
+                setEnded(true);
+                setPaused(true);
+                toast.info("Simulation ended");
+              }}
+              disabled={ended}
+              title="End simulation"
+            >
+              <Square className="h-3 w-3" />
+              End
+            </Button>
           </div>
-        )}
+        </div>
       </div>
 
       {risk && (risk.level === "high" || risk.level === "critical") && (
@@ -117,12 +223,49 @@ function Console() {
       <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.2fr_1.3fr_1fr]">
         {/* LEFT: Conversation */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
-          <PanelHeader title="Conversation" subtitle={`${messages.length} turns`} />
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div>
+              <h3 className="text-sm font-semibold">Conversation</h3>
+              <div className="text-xs text-muted-foreground">
+                {messages.length} turns
+                {paused && !ended && <span className="ml-1.5 text-warning">· paused</span>}
+                {ended && <span className="ml-1.5 text-destructive">· ended</span>}
+                {replayIndex !== null && <span className="ml-1.5 text-primary">· replaying</span>}
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={replayConversation} title="Replay">
+                <Play className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={downloadChat} title="Download">
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearChat} title="Clear">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border px-3 py-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search conversation…"
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
+          </div>
           <ScrollArea className="flex-1 px-4">
             <div ref={scrollRef} className="space-y-4 py-4">
-              {messages.map((m) => (
+              {visibleMessages.map((m) => (
                 <MessageBubble key={m.id} m={m} />
               ))}
+              {!visibleMessages.length && (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  {search ? "No matches" : "Conversation is empty"}
+                </div>
+              )}
               {typing && (
                 <div className="flex gap-2">
                   <div className="grid h-8 w-8 place-items-center rounded-full bg-accent">
@@ -367,6 +510,39 @@ function EmptyState({ icon: Icon, title, body }: { icon: typeof Sparkles; title:
       </div>
       <div className="font-medium">{title}</div>
       <p className="mt-1 text-xs text-muted-foreground">{body}</p>
+    </div>
+  );
+}
+
+type Emotion = "Happy" | "Neutral" | "Confused" | "Frustrated" | "Angry";
+
+function deriveEmotion(analysis?: {
+  sentiment: string;
+  sentiment_score: number;
+  frustration: number;
+  confidence: number;
+}): Emotion {
+  if (!analysis) return "Neutral";
+  if (analysis.frustration >= 0.75 || analysis.sentiment === "very_negative") return "Angry";
+  if (analysis.frustration >= 0.45 || analysis.sentiment === "negative") return "Frustrated";
+  if (analysis.confidence > 0 && analysis.confidence < 0.4) return "Confused";
+  if (analysis.sentiment_score > 0.3 || analysis.sentiment === "positive") return "Happy";
+  return "Neutral";
+}
+
+function EmotionBadge({ emotion }: { emotion: Emotion }) {
+  const map: Record<Emotion, { Icon: typeof Smile; className: string }> = {
+    Happy: { Icon: Smile, className: "bg-success/15 text-success border-success/30" },
+    Neutral: { Icon: Meh, className: "bg-muted text-muted-foreground border-border" },
+    Confused: { Icon: HelpCircle, className: "bg-warning/15 text-warning border-warning/30" },
+    Frustrated: { Icon: Frown, className: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+    Angry: { Icon: AngryIcon, className: "bg-destructive/15 text-destructive border-destructive/30" },
+  };
+  const { Icon, className } = map[emotion];
+  return (
+    <div className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium ${className}`}>
+      <Icon className="h-3 w-3" />
+      {emotion}
     </div>
   );
 }

@@ -27,8 +27,29 @@ const MODES: { value: Mode; label: string; icon: typeof Bot; desc: string }[] = 
   { value: "replay", label: "Replay", icon: Play, desc: "Upload a past transcript and step through turn by turn." },
 ];
 
-const PERSONAS: Persona[] = ["Calm", "Angry", "Confused", "Technical", "Impatient", "VIP Customer"];
+const PERSONAS: Persona[] = [
+  "Beginner",
+  "Technical User",
+  "Angry",
+  "Frustrated",
+  "Polite",
+  "Calm",
+  "Confused",
+  "Technical",
+  "Impatient",
+  "VIP Customer",
+];
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard", "Expert"];
+const SCENARIO_PRESETS = [
+  "Login Issue",
+  "Password Reset",
+  "Payment Failure",
+  "Subscription Cancellation",
+  "Refund Request",
+  "Product Information",
+  "Order Delay",
+  "Technical Support",
+];
 
 function NewSession() {
   const navigate = useNavigate();
@@ -142,6 +163,25 @@ function NewSession() {
         </div>
         <div className="space-y-1.5">
           <Label>Scenario</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {SCENARIO_PRESETS.map((s) => {
+              const active = config.scenario === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setConfig({ ...config, scenario: s })}
+                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                    active
+                      ? "border-primary/60 bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
           <Textarea
             rows={3}
             value={config.scenario}
