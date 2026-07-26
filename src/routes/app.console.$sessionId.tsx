@@ -223,12 +223,49 @@ function Console() {
       <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.2fr_1.3fr_1fr]">
         {/* LEFT: Conversation */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
-          <PanelHeader title="Conversation" subtitle={`${messages.length} turns`} />
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div>
+              <h3 className="text-sm font-semibold">Conversation</h3>
+              <div className="text-xs text-muted-foreground">
+                {messages.length} turns
+                {paused && !ended && <span className="ml-1.5 text-warning">· paused</span>}
+                {ended && <span className="ml-1.5 text-destructive">· ended</span>}
+                {replayIndex !== null && <span className="ml-1.5 text-primary">· replaying</span>}
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={replayConversation} title="Replay">
+                <Play className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={downloadChat} title="Download">
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearChat} title="Clear">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border px-3 py-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search conversation…"
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
+          </div>
           <ScrollArea className="flex-1 px-4">
             <div ref={scrollRef} className="space-y-4 py-4">
-              {messages.map((m) => (
+              {visibleMessages.map((m) => (
                 <MessageBubble key={m.id} m={m} />
               ))}
+              {!visibleMessages.length && (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  {search ? "No matches" : "Conversation is empty"}
+                </div>
+              )}
               {typing && (
                 <div className="flex gap-2">
                   <div className="grid h-8 w-8 place-items-center rounded-full bg-accent">
