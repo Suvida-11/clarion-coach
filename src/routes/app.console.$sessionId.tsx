@@ -384,14 +384,26 @@ function Console() {
   );
 }
 
-function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function PanelHeader({
+  title,
+  subtitle,
+  icon: Icon,
+}: {
+  title: string;
+  subtitle: string;
+  icon?: typeof Sparkles;
+}) {
   return (
     <div className="flex items-center justify-between border-b border-border px-4 py-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="h-3.5 w-3.5 text-primary" />}
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
       <span className="text-xs text-muted-foreground">{subtitle}</span>
     </div>
   );
 }
+
 
 function MessageBubble({ m }: { m: ChatMessage }) {
   const isAgent = m.role === "agent";
