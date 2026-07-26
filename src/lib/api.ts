@@ -128,6 +128,19 @@ export const api = {
     return req(`/report/${sessionId}`);
   },
 
+  async reportPdf(sessionId: string, userName?: string): Promise<Blob> {
+    if (USING_MOCKS) {
+      // Simple text/plain fallback so download still works with mocks.
+      return new Blob([`Clario AI report for session ${sessionId}\nUser: ${userName ?? "—"}\n`], {
+        type: "text/plain",
+      });
+    }
+    const qs = userName ? `?user=${encodeURIComponent(userName)}` : "";
+    const res = await fetch(`${BASE_URL}/report/${sessionId}/pdf${qs}`);
+    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+    return await res.blob();
+  },
+
   analytics(): Promise<AnalyticsSummary> {
     if (USING_MOCKS) return mock(mockAnalytics);
     return req("/analytics");

@@ -72,7 +72,7 @@ def _risk_from(analysis: IntentAnalysis) -> EscalationRisk:
     )
 
 
-def _pipeline(customer_message: str, trace: list[AgentTraceEntry]):
+def _pipeline(customer_message: str, trace: list[AgentTraceEntry], session_id: str | None = None):
     """Intent -> Knowledge -> Coaching -> Risk with trace recording."""
     t0 = time.perf_counter()
     analysis = analyze_intent(customer_message)
@@ -105,7 +105,20 @@ def _pipeline(customer_message: str, trace: list[AgentTraceEntry]):
     ))
 
     t2 = time.perf_counter()
-    coaching = coach(customer_message, analysis)
+    prev_turns = store.session_turns(session_id) if session_id else []
+    prev_suggestions = [t.coaching.suggested_response for t in prev_turns[-6:]]
+    prev_tips: list[str] = []
+    for t in prev_turns[-4:]:
+        prev_tips.extend(t.coaching.empathy_notes)
+        prev_tips.extend(t.coaching.professional_notes)
+        prev_tips.extend(t.coaching.tone_notes)
+    history = [
+        {"role": m.role, "content": m.content}
+        for t in prev_turns[-8:]
+        for m in ([t.turn] + ([t.simulated_customer_reply] if t.simulated_customer_reply else []))
+    ]
+    coaching = coach(customer_message, analysis, history=history,
+                     previous_suggestions=prev_suggestions, previous_tips=prev_tips)
     trace.append(_trace(
         "Coaching Agent", t2,
         "Generated coaching suggestions",
@@ -159,7 +172,7 @@ def handle_chat(
 
     # Manual mode OR customer speaking in simulator: analyze incoming message.
     if req.role == "customer" or mode == "manual":
-        analysis, knowledge, kb_docs, risk, coaching = _pipeline(req.message, trace)
+        analysis, knowledge, kb_docs, risk, coaching = _pipeline(req.message, trace, req.session_id)
         return ChatTurnResponse(
             turn=turn,
             analysis=analysis,
@@ -193,7 +206,7 @@ def handle_chat(
     ))
     simulated = _new_msg("customer", simulated_content)
 
-    analysis, knowledge, kb_docs, risk, coaching = _pipeline(simulated_content, trace)
+    analysis, knowledge, kb_docs, risk, coaching = _pipeline(simulated_content, trace, req.session_id)
     return ChatTurnResponse(
         turn=turn,
         simulated_customer_reply=simulated,

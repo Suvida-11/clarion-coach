@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,9 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { Award, AlertCircle, ArrowUpRight, Download, Sparkles } from "lucide-react";
+import { Award, AlertCircle, ArrowUpRight, Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/user";
 
 export const Route = createFileRoute("/app/reports/$sessionId")({
   head: () => ({ meta: [{ title: "Post-Interaction Report — Clario AI" }] }),
@@ -24,6 +26,28 @@ export const Route = createFileRoute("/app/reports/$sessionId")({
 function ReportPage() {
   const { sessionId } = Route.useParams();
   const q = useQuery({ queryKey: ["report", sessionId], queryFn: () => api.report(sessionId) });
+  const user = useCurrentUser();
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const blob = await api.reportPdf(sessionId, user?.name);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `clario-report-${sessionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Report downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download report");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   if (!q.data) {
     return (
@@ -44,13 +68,12 @@ function ReportPage() {
             Session <span className="font-mono">{sessionId}</span>
           </h1>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            toast.info("PDF export queued (wire /report/:id/pdf on your backend)");
-          }}
-        >
-          <Download className="mr-1.5 h-4 w-4" />
+        <Button variant="outline" onClick={handleDownload} disabled={downloading}>
+          {downloading ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-1.5 h-4 w-4" />
+          )}
           Download PDF
         </Button>
       </div>
