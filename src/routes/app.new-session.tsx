@@ -163,6 +163,25 @@ function NewSession() {
         </div>
         <div className="space-y-1.5">
           <Label>Scenario</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {SCENARIO_PRESETS.map((s) => {
+              const active = config.scenario === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setConfig({ ...config, scenario: s })}
+                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                    active
+                      ? "border-primary/60 bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
           <Textarea
             rows={3}
             value={config.scenario}
