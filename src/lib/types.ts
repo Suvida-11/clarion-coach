@@ -39,12 +39,14 @@ export interface ChatMessage {
 
 export interface IntentAnalysis {
   intent: string;
+  secondary_intent?: string;
   sentiment: "positive" | "neutral" | "negative" | "very_negative";
   sentiment_score: number; // -1..1
   frustration: number; // 0..1
   urgency: number; // 0..1
   confidence: number; // 0..1
   satisfaction_trend: "improving" | "steady" | "declining";
+  conversation_summary?: string;
 }
 
 export interface CoachingSuggestion {
@@ -53,6 +55,11 @@ export interface CoachingSuggestion {
   grammar_notes: string[];
   empathy_notes: string[];
   professional_notes: string[];
+  empathy_tip?: string;
+  tone_improvement?: string;
+  next_best_action?: string;
+  troubleshooting_recommendation?: string;
+  escalation_recommendation?: string;
 }
 
 export interface RetrievedChunk {
