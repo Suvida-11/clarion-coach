@@ -150,8 +150,9 @@ function Console() {
             Refund dispute — Orbit Wireless Earbuds
           </div>
         </div>
-        {risk && (
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <EmotionBadge emotion={emotion} />
+          {risk && (
             <Badge
               variant={risk.level === "high" || risk.level === "critical" ? "destructive" : "secondary"}
               className="gap-1"
@@ -159,8 +160,53 @@ function Console() {
               <AlertTriangle className="h-3 w-3" />
               {risk.level.toUpperCase()} · {(risk.probability * 100).toFixed(0)}%
             </Badge>
+          )}
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-background/40 p-0.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => setPaused((p) => !p)}
+              disabled={ended}
+              title={paused ? "Resume" : "Pause"}
+            >
+              {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+              {paused ? "Resume" : "Pause"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => {
+                setMessages([]);
+                setLatest(null);
+                setEnded(false);
+                setPaused(false);
+                setReplayIndex(null);
+                toast.success("Simulation reset");
+              }}
+              title="Reset"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+              onClick={() => {
+                setEnded(true);
+                setPaused(true);
+                toast.info("Simulation ended");
+              }}
+              disabled={ended}
+              title="End simulation"
+            >
+              <Square className="h-3 w-3" />
+              End
+            </Button>
           </div>
-        )}
+        </div>
       </div>
 
       {risk && (risk.level === "high" || risk.level === "critical") && (
