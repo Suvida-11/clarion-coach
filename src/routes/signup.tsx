@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useState } from "react";
+import { setCurrentUser } from "@/lib/user";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -19,14 +20,19 @@ export const Route = createFileRoute("/signup")({
 function SignupPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [fn, setFn] = useState("");
+  const [ln, setLn] = useState("");
+  const [email, setEmail] = useState("");
   return (
     <AuthShell title="Create your workspace" subtitle="Start coaching your team in minutes.">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           setLoading(true);
+          const name = `${fn.trim()} ${ln.trim()}`.trim();
+          if (name) setCurrentUser({ name, email: email.trim() || undefined });
           setTimeout(() => {
-            toast.success("Workspace created");
+            toast.success(`Welcome, ${fn.trim() || "aboard"}`);
             navigate({ to: "/app" });
           }, 500);
         }}
@@ -35,16 +41,16 @@ function SignupPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="fn">First name</Label>
-            <Input id="fn" required placeholder="Maya" />
+            <Input id="fn" required placeholder="Maya" value={fn} onChange={(e) => setFn(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ln">Last name</Label>
-            <Input id="ln" required placeholder="Kensington" />
+            <Input id="ln" required placeholder="Kensington" value={ln} onChange={(e) => setLn(e.target.value)} />
           </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Work email</Label>
-          <Input id="email" type="email" required placeholder="you@company.com" />
+          <Input id="email" type="email" required placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
