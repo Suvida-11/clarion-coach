@@ -172,7 +172,7 @@ def handle_chat(
 
     # Manual mode OR customer speaking in simulator: analyze incoming message.
     if req.role == "customer" or mode == "manual":
-        analysis, knowledge, kb_docs, risk, coaching = _pipeline(req.message, trace)
+        analysis, knowledge, kb_docs, risk, coaching = _pipeline(req.message, trace, req.session_id)
         return ChatTurnResponse(
             turn=turn,
             analysis=analysis,
@@ -206,7 +206,7 @@ def handle_chat(
     ))
     simulated = _new_msg("customer", simulated_content)
 
-    analysis, knowledge, kb_docs, risk, coaching = _pipeline(simulated_content, trace)
+    analysis, knowledge, kb_docs, risk, coaching = _pipeline(simulated_content, trace, req.session_id)
     return ChatTurnResponse(
         turn=turn,
         simulated_customer_reply=simulated,
