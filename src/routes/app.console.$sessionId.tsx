@@ -56,6 +56,10 @@ function Console() {
   const [latest, setLatest] = useState<ChatTurnResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [search, setSearch] = useState("");
+  const [replayIndex, setReplayIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,7 +67,7 @@ function Console() {
   }, [messages, typing]);
 
   async function send() {
-    if (!input.trim()) return;
+    if (!input.trim() || paused || ended) return;
     const text = input;
     setInput("");
     setLoading(true);
@@ -85,10 +89,53 @@ function Console() {
     }
   }
 
+  function downloadChat() {
+    const text = messages
+      .map((m) => `[${format(new Date(m.timestamp), "HH:mm:ss")}] ${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clario-session-${sessionId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Transcript downloaded");
+  }
+
+  function clearChat() {
+    setMessages([]);
+    setLatest(null);
+    setReplayIndex(null);
+    toast.success("Conversation cleared");
+  }
+
+  function replayConversation() {
+    if (!messages.length) return;
+    setReplayIndex(0);
+    let i = 0;
+    const interval = setInterval(() => {
+      i += 1;
+      if (i >= messages.length) {
+        setReplayIndex(null);
+        clearInterval(interval);
+        return;
+      }
+      setReplayIndex(i);
+    }, 900);
+  }
+
+  const visibleMessages = search.trim()
+    ? messages.filter((m) => m.content.toLowerCase().includes(search.toLowerCase()))
+    : replayIndex !== null
+      ? messages.slice(0, replayIndex + 1)
+      : messages;
+
   const risk = latest?.risk;
   const analysis = latest?.analysis;
   const coaching = latest?.coaching;
   const kb = latest?.knowledge ?? [];
+  const emotion = deriveEmotion(analysis);
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3 pb-6">
