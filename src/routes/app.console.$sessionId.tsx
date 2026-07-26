@@ -514,5 +514,38 @@ function EmptyState({ icon: Icon, title, body }: { icon: typeof Sparkles; title:
   );
 }
 
+type Emotion = "Happy" | "Neutral" | "Confused" | "Frustrated" | "Angry";
+
+function deriveEmotion(analysis?: {
+  sentiment: string;
+  sentiment_score: number;
+  frustration: number;
+  confidence: number;
+}): Emotion {
+  if (!analysis) return "Neutral";
+  if (analysis.frustration >= 0.75 || analysis.sentiment === "very_negative") return "Angry";
+  if (analysis.frustration >= 0.45 || analysis.sentiment === "negative") return "Frustrated";
+  if (analysis.confidence > 0 && analysis.confidence < 0.4) return "Confused";
+  if (analysis.sentiment_score > 0.3 || analysis.sentiment === "positive") return "Happy";
+  return "Neutral";
+}
+
+function EmotionBadge({ emotion }: { emotion: Emotion }) {
+  const map: Record<Emotion, { Icon: typeof Smile; className: string }> = {
+    Happy: { Icon: Smile, className: "bg-success/15 text-success border-success/30" },
+    Neutral: { Icon: Meh, className: "bg-muted text-muted-foreground border-border" },
+    Confused: { Icon: HelpCircle, className: "bg-warning/15 text-warning border-warning/30" },
+    Frustrated: { Icon: Frown, className: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+    Angry: { Icon: AngryIcon, className: "bg-destructive/15 text-destructive border-destructive/30" },
+  };
+  const { Icon, className } = map[emotion];
+  return (
+    <div className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium ${className}`}>
+      <Icon className="h-3 w-3" />
+      {emotion}
+    </div>
+  );
+}
+
 // used
 void Progress;
