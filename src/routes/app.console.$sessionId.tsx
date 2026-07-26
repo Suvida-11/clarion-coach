@@ -18,10 +18,23 @@ import {
   Award,
   User,
   Bot,
+  Pause,
+  Play,
+  RotateCcw,
+  Square,
+  Download,
+  Trash2,
+  Search,
+  Smile,
+  Frown,
+  Meh,
+  Angry as AngryIcon,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/app/console/$sessionId")({
   head: () => ({ meta: [{ title: "Live Coaching Console — Clario AI" }] }),
