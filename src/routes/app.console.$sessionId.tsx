@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
+import { useCurrentUser, firstName } from "@/lib/user";
 import { Input } from "@/components/ui/input";
 import { IntentAnalysisPanel, type EmotionPoint, deriveEmotionFromAnalysis } from "@/components/IntentAnalysisPanel";
 import { CoachingPanel } from "@/components/CoachingPanel";
@@ -407,6 +408,8 @@ function PanelHeader({
 
 function MessageBubble({ m }: { m: ChatMessage }) {
   const isAgent = m.role === "agent";
+  const user = useCurrentUser();
+  const agentLabel = user ? firstName(user.name) : "You";
   return (
     <div className={`flex gap-2 ${isAgent ? "flex-row-reverse" : ""}`}>
       <div
@@ -427,12 +430,13 @@ function MessageBubble({ m }: { m: ChatMessage }) {
           {m.content}
         </div>
         <div className="mt-1 px-1 text-[10px] text-muted-foreground">
-          {format(new Date(m.timestamp), "HH:mm:ss")}
+          {isAgent ? agentLabel : "Customer"} · {format(new Date(m.timestamp), "HH:mm:ss")}
         </div>
       </div>
     </div>
   );
 }
+
 
 
 type Emotion = "Happy" | "Neutral" | "Confused" | "Frustrated" | "Angry";

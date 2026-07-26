@@ -15,6 +15,7 @@ import {
   Activity,
   Gauge,
 } from "lucide-react";
+import { useCurrentUser, firstName } from "@/lib/user";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/app/")({
 
 
 function Dashboard() {
+  const user = useCurrentUser();
   const analytics = useQuery({ queryKey: ["analytics"], queryFn: api.analytics });
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: api.sessionHistory });
   const latest = useQuery({
@@ -94,7 +96,7 @@ function Dashboard() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">
-            Good afternoon, Maya 👋
+            Good afternoon, {firstName(user?.name ?? "there")} 👋
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Here's how your coaching workspace is performing today.

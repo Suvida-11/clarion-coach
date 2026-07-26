@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useState } from "react";
+import { setCurrentUser } from "@/lib/user";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -19,22 +20,43 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to your Clario workspace.">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           setLoading(true);
+          const trimmed = name.trim();
+          if (trimmed) setCurrentUser({ name: trimmed, email: email.trim() || undefined });
           setTimeout(() => {
-            toast.success("Signed in");
+            toast.success(`Welcome, ${trimmed || "back"}`);
             navigate({ to: "/app" });
           }, 500);
         }}
         className="space-y-4"
       >
         <div className="space-y-1.5">
+          <Label htmlFor="name">Your name</Label>
+          <Input
+            id="name"
+            required
+            placeholder="Suvida"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="email">Work email</Label>
-          <Input id="email" type="email" required placeholder="you@company.com" />
+          <Input
+            id="email"
+            type="email"
+            required
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">

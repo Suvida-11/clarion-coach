@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Fragment } from "react";
+import { useCurrentUser, clearCurrentUser, initials, firstName } from "@/lib/user";
 
 function useCrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -25,6 +26,10 @@ function useCrumbs() {
 
 export function Topbar() {
   const crumbs = useCrumbs();
+  const user = useCurrentUser();
+  const displayName = user?.name ?? "Guest";
+  const displayEmail = user?.email ?? "";
+  const short = user ? firstName(user.name) : "Guest";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur-xl md:px-6">
@@ -85,18 +90,22 @@ export function Topbar() {
             <Button variant="ghost" className="h-9 gap-2 pr-2 pl-1.5">
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-brand text-xs font-bold text-primary-foreground">
-                  MK
+                  {initials(displayName)}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm font-medium sm:inline">Maya K.</span>
+              <span className="hidden text-sm font-medium sm:inline">
+                Welcome, {short}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
-              <div className="font-medium">Maya Kensington</div>
-              <div className="text-xs font-normal text-muted-foreground">
-                maya@clario.ai
-              </div>
+              <div className="font-medium">{displayName}</div>
+              {displayEmail && (
+                <div className="text-xs font-normal text-muted-foreground">
+                  {displayEmail}
+                </div>
+              )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
@@ -106,7 +115,7 @@ export function Topbar() {
             <DropdownMenuItem>Billing</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/">Sign out</Link>
+              <Link to="/" onClick={() => clearCurrentUser()}>Sign out</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
