@@ -15,6 +15,7 @@ import {
   Activity,
   Gauge,
 } from "lucide-react";
+import { useCurrentUser, firstName } from "@/lib/user";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
