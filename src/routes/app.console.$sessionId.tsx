@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { ChatMessage, ChatTurnResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Send,
   AlertTriangle,
   Sparkles,
-  ThumbsUp,
-  Type as TypeIcon,
-  Heart,
-  Award,
   User,
   Bot,
   Pause,
@@ -30,16 +25,22 @@ import {
   Meh,
   Angry as AngryIcon,
   HelpCircle,
+  Brain,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
 import { Input } from "@/components/ui/input";
+import { IntentAnalysisPanel, type EmotionPoint, deriveEmotionFromAnalysis } from "@/components/IntentAnalysisPanel";
+import { CoachingPanel } from "@/components/CoachingPanel";
+import { KnowledgePanel } from "@/components/KnowledgePanel";
 
 export const Route = createFileRoute("/app/console/$sessionId")({
   head: () => ({ meta: [{ title: "Live Coaching Console — Clario AI" }] }),
   component: Console,
 });
+
 
 function Console() {
   const { sessionId } = Route.useParams();
@@ -60,6 +61,7 @@ function Console() {
   const [ended, setEnded] = useState(false);
   const [search, setSearch] = useState("");
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
+  const [analysisHistory, setAnalysisHistory] = useState<ChatTurnResponse[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,6 +77,7 @@ function Console() {
       const resp = await api.chat({ session_id: sessionId, message: text, role: "agent" });
       setMessages((m) => [...m, resp.turn]);
       setLatest(resp);
+      setAnalysisHistory((h) => [...h, resp]);
       if (resp.simulated_customer_reply) {
         setTyping(true);
         setTimeout(() => {
@@ -107,8 +110,10 @@ function Console() {
     setMessages([]);
     setLatest(null);
     setReplayIndex(null);
+    setAnalysisHistory([]);
     toast.success("Conversation cleared");
   }
+
 
   function replayConversation() {
     if (!messages.length) return;
@@ -135,6 +140,14 @@ function Console() {
   const analysis = latest?.analysis;
   const coaching = latest?.coaching;
   const kb = latest?.knowledge ?? [];
+  const emotionTimeline = useMemo<EmotionPoint[]>(() => {
+    return analysisHistory.map((h, i) => {
+      const emo = deriveEmotionFromAnalysis(h.analysis);
+      const value =
+        emo === "happy" ? 2 : emo === "neutral" ? 0 : emo === "confused" ? -1 : emo === "frustrated" ? -1.5 : -2;
+      return { turn: i + 1, emotion: emo, value };
+    });
+  }, [analysisHistory]);
   const emotion = deriveEmotion(analysis);
 
   return (
@@ -183,6 +196,7 @@ function Console() {
                 setEnded(false);
                 setPaused(false);
                 setReplayIndex(null);
+                setAnalysisHistory([]);
                 toast.success("Simulation reset");
               }}
               title="Reset"
@@ -220,7 +234,7 @@ function Console() {
       )}
 
       {/* Three-panel workspace */}
-      <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.2fr_1.3fr_1fr]">
+      <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
         {/* LEFT: Conversation */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -318,98 +332,51 @@ function Console() {
           </div>
         </section>
 
-        {/* CENTER: Coaching */}
+        {/* Intent & sentiment side panel */}
+        <section className="surface flex min-h-0 flex-col rounded-2xl">
+          <PanelHeader
+            title="Intent & Sentiment"
+            subtitle={analysis ? `conf ${(analysis.confidence * 100).toFixed(0)}%` : "awaiting"}
+            icon={Brain}
+          />
+          <ScrollArea className="flex-1 p-4">
+            <IntentAnalysisPanel
+              analysis={analysis}
+              risk={risk}
+              emotionTimeline={emotionTimeline}
+            />
+          </ScrollArea>
+        </section>
+
+        {/* Coaching panel */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <PanelHeader
             title="AI Coaching"
-            subtitle="Intent · Sentiment · Suggestions"
+            subtitle="Real-time guidance"
+            icon={Sparkles}
           />
           <ScrollArea className="flex-1 p-4">
-            {!latest ? (
-              <EmptyState
-                icon={Sparkles}
-                title="Waiting for the first turn"
-                body="Send a message to activate the coaching agents."
-              />
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <Metric label="Intent" value={analysis!.intent} />
-                  <Metric
-                    label="Sentiment"
-                    value={analysis!.sentiment.replace("_", " ")}
-                    accent={
-                      analysis!.sentiment_score > 0
-                        ? "text-success"
-                        : analysis!.sentiment_score < -0.3
-                          ? "text-destructive"
-                          : "text-warning"
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Bar label="Frustration" value={analysis!.frustration} tone="destructive" />
-                  <Bar label="Urgency" value={analysis!.urgency} tone="warning" />
-                  <Bar label="Confidence" value={analysis!.confidence} tone="primary" />
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
-                    <Sparkles className="h-3 w-3" /> Suggested response
-                  </h4>
-                  <div className="glass rounded-lg p-3 text-sm leading-relaxed">
-                    {coaching!.suggested_response}
-                  </div>
-                </div>
-
-                <CoachSection icon={TypeIcon} label="Tone" items={coaching!.tone_notes} />
-                <CoachSection icon={Heart} label="Empathy" items={coaching!.empathy_notes} />
-                <CoachSection icon={ThumbsUp} label="Grammar" items={coaching!.grammar_notes} />
-                <CoachSection icon={Award} label="Professionalism" items={coaching!.professional_notes} />
-              </div>
-            )}
+            <CoachingPanel
+              coaching={coaching}
+              risk={risk}
+              onUseSuggestion={(t) => setInput(t)}
+            />
           </ScrollArea>
         </section>
 
-        {/* RIGHT: Knowledge */}
+        {/* Knowledge recommendation panel */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <PanelHeader
-            title="Knowledge Recommendations"
-            subtitle={`${kb.length} sources · RAG`}
+            title="Knowledge Base"
+            subtitle={`${kb.length} matches · RAG`}
+            icon={BookOpen}
           />
           <ScrollArea className="flex-1 p-4">
-            {kb.length === 0 ? (
-              <EmptyState
-                icon={Sparkles}
-                title="No retrievals yet"
-                body="Knowledge chunks appear as the conversation progresses."
-              />
-            ) : (
-              <div className="space-y-3">
-                {kb.map((c) => (
-                  <div key={c.id} className="glass hover-lift rounded-lg p-3">
-                    <div className="mb-1 flex items-center justify-between">
-                      <Badge variant="outline" className="text-[10px]">{c.type}</Badge>
-                      <span className="text-xs font-semibold text-primary">
-                        {(c.similarity * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="text-sm font-semibold">{c.title}</div>
-                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                      {c.preview}
-                    </p>
-                    <div className="mt-2 truncate font-mono text-[10px] text-muted-foreground">
-                      {c.source}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <KnowledgePanel chunks={kb} />
           </ScrollArea>
         </section>
       </div>
+
 
       {/* Agent Execution Pipeline */}
       <AgentExecutionPanel trace={latest?.agent_trace} />
@@ -417,14 +384,26 @@ function Console() {
   );
 }
 
-function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function PanelHeader({
+  title,
+  subtitle,
+  icon: Icon,
+}: {
+  title: string;
+  subtitle: string;
+  icon?: typeof Sparkles;
+}) {
   return (
     <div className="flex items-center justify-between border-b border-border px-4 py-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="h-3.5 w-3.5 text-primary" />}
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
       <span className="text-xs text-muted-foreground">{subtitle}</span>
     </div>
   );
 }
+
 
 function MessageBubble({ m }: { m: ChatMessage }) {
   const isAgent = m.role === "agent";
@@ -455,64 +434,6 @@ function MessageBubble({ m }: { m: ChatMessage }) {
   );
 }
 
-function Metric({ label, value, accent = "text-foreground" }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className="glass rounded-lg p-3">
-      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-sm font-semibold capitalize ${accent}`}>{value}</div>
-    </div>
-  );
-}
-
-function Bar({ label, value, tone }: { label: string; value: number; tone: "destructive" | "warning" | "primary" }) {
-  const toneClass = {
-    destructive: "bg-destructive",
-    warning: "bg-warning",
-    primary: "bg-primary",
-  }[tone];
-  return (
-    <div className="glass rounded-lg p-3">
-      <div className="mb-1 flex items-center justify-between text-[10px]">
-        <span className="uppercase text-muted-foreground">{label}</span>
-        <span className="font-semibold">{(value * 100).toFixed(0)}%</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-border">
-        <div className={`h-full ${toneClass}`} style={{ width: `${value * 100}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function CoachSection({ icon: Icon, label, items }: { icon: typeof Sparkles; label: string; items: string[] }) {
-  if (!items.length) return null;
-  return (
-    <div>
-      <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
-        <Icon className="h-3 w-3" /> {label}
-      </h4>
-      <ul className="space-y-1.5">
-        {items.map((i) => (
-          <li key={i} className="flex items-start gap-2 text-xs">
-            <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-primary" />
-            <span className="text-foreground/90">{i}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function EmptyState({ icon: Icon, title, body }: { icon: typeof Sparkles; title: string; body: string }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <div className="mb-3 grid h-10 w-10 place-items-center rounded-full bg-accent">
-        <Icon className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <div className="font-medium">{title}</div>
-      <p className="mt-1 text-xs text-muted-foreground">{body}</p>
-    </div>
-  );
-}
 
 type Emotion = "Happy" | "Neutral" | "Confused" | "Frustrated" | "Angry";
 
