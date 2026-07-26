@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { Award, AlertCircle, ArrowUpRight, Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { getCurrentUser } from "@/lib/user";
+import { useCurrentUser } from "@/lib/user";
 
 export const Route = createFileRoute("/app/reports/$sessionId")({
   head: () => ({ meta: [{ title: "Post-Interaction Report — Clario AI" }] }),
