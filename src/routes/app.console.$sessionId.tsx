@@ -77,6 +77,7 @@ function Console() {
       const resp = await api.chat({ session_id: sessionId, message: text, role: "agent" });
       setMessages((m) => [...m, resp.turn]);
       setLatest(resp);
+      setAnalysisHistory((h) => [...h, resp]);
       if (resp.simulated_customer_reply) {
         setTyping(true);
         setTimeout(() => {
