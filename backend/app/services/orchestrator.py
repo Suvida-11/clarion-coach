@@ -105,7 +105,20 @@ def _pipeline(customer_message: str, trace: list[AgentTraceEntry]):
     ))
 
     t2 = time.perf_counter()
-    coaching = coach(customer_message, analysis)
+    prev_turns = store.session_turns(_current_sid.get()) if _current_sid.get() else []
+    prev_suggestions = [t.coaching.suggested_response for t in prev_turns[-6:]]
+    prev_tips: list[str] = []
+    for t in prev_turns[-4:]:
+        prev_tips.extend(t.coaching.empathy_notes)
+        prev_tips.extend(t.coaching.professional_notes)
+        prev_tips.extend(t.coaching.tone_notes)
+    history = [
+        {"role": m.role, "content": m.content}
+        for t in prev_turns[-8:]
+        for m in ([t.turn] + ([t.simulated_customer_reply] if t.simulated_customer_reply else []))
+    ]
+    coaching = coach(customer_message, analysis, history=history,
+                     previous_suggestions=prev_suggestions, previous_tips=prev_tips)
     trace.append(_trace(
         "Coaching Agent", t2,
         "Generated coaching suggestions",
