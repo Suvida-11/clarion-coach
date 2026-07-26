@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
+import { useCurrentUser, firstName } from "@/lib/user";
 import { Input } from "@/components/ui/input";
 import { IntentAnalysisPanel, type EmotionPoint, deriveEmotionFromAnalysis } from "@/components/IntentAnalysisPanel";
 import { CoachingPanel } from "@/components/CoachingPanel";
