@@ -139,12 +139,12 @@ function Dashboard() {
       </div>
 
       {/* Charts + Recent */}
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="surface rounded-2xl p-5">
-          <div className="mb-4 flex items-center justify-between">
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="surface hover-lift rounded-2xl p-6">
+          <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold">Sentiment Trend</h3>
-              <p className="text-xs text-muted-foreground">Last 14 days</p>
+              <h3 className="text-base font-semibold tracking-tight">Sentiment Trend</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">Last 14 days</p>
             </div>
             <Badge variant="secondary" className="gap-1">
               <TrendingUp className="h-3 w-3" />
@@ -185,9 +185,12 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="surface rounded-2xl p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold">Resolution Score</h3>
+        <div className="surface hover-lift rounded-2xl p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold tracking-tight">Resolution Score</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">Last 14 days</p>
+            </div>
             <span className="text-xs text-muted-foreground">14d</span>
           </div>
           <div className="h-64">
@@ -220,10 +223,10 @@ function Dashboard() {
       </div>
 
       {/* Recent sessions */}
-      <div className="surface rounded-2xl p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-semibold">Recent sessions</h3>
-          <Link to="/app/analytics" className="text-xs text-primary hover:underline">
+      <div className="surface rounded-2xl p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <h3 className="text-base font-semibold tracking-tight">Recent sessions</h3>
+          <Link to="/app/analytics" className="text-xs font-medium text-primary hover:underline">
             View all
           </Link>
         </div>
