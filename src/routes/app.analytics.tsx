@@ -68,7 +68,7 @@ function Analytics() {
         <StatCard label="CSAT" value={d.csat.toFixed(1)} sub="of 5.0" accent="text-success" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard title="Escalation trend" subtitle="Daily escalations, last 14 days">
           <BarChart data={d.escalation_series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
