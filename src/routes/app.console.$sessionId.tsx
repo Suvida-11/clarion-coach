@@ -271,19 +271,19 @@ function Console() {
               />
             </div>
           </div>
-          <ScrollArea className="flex-1 px-4">
-            <div ref={scrollRef} className="space-y-4 py-4">
+          <ScrollArea className="flex-1 px-5">
+            <div ref={scrollRef} className="space-y-5 py-5">
               {visibleMessages.map((m) => (
                 <MessageBubble key={m.id} m={m} />
               ))}
               {!visibleMessages.length && (
-                <div className="py-8 text-center text-xs text-muted-foreground">
+                <div className="py-12 text-center text-xs text-muted-foreground">
                   {search ? "No matches" : "Conversation is empty"}
                 </div>
               )}
               {typing && (
-                <div className="flex gap-2">
-                  <div className="grid h-8 w-8 place-items-center rounded-full bg-accent">
+                <div className="flex gap-2.5">
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-accent">
                     <User className="h-4 w-4" />
                   </div>
                   <div className="glass flex items-center gap-1 rounded-2xl rounded-tl-sm px-4 py-3">
