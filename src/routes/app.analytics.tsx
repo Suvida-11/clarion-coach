@@ -154,10 +154,10 @@ function StatCard({
   accent?: string;
 }) {
   return (
-    <div className="surface hover-lift rounded-xl p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-2 text-2xl font-black ${accent}`}>{value}</div>
-      <div className="text-xs text-muted-foreground">{sub}</div>
+    <div className="surface hover-lift flex h-full flex-col justify-between rounded-2xl p-5">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`mt-3 text-3xl font-black leading-none tracking-tight ${accent}`}>{value}</div>
+      <div className="mt-1.5 text-xs text-muted-foreground">{sub}</div>
     </div>
   );
 }
@@ -172,12 +172,12 @@ function ChartCard({
   children: React.ReactElement;
 }) {
   return (
-    <div className="surface rounded-2xl p-5">
-      <div className="mb-3">
-        <h3 className="font-semibold">{title}</h3>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <div className="surface hover-lift flex h-full flex-col rounded-2xl p-6">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
       </div>
-      <div className="h-64">
+      <div className="h-64 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           {children}
         </ResponsiveContainer>
