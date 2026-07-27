@@ -154,21 +154,26 @@ function KnowledgePage() {
       </div>
 
       {/* Documents */}
-      <div className="surface rounded-2xl p-5">
-        <h3 className="mb-3 text-sm font-semibold">Indexed documents</h3>
+      <div className="surface rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold tracking-tight">Indexed documents</h3>
+          <span className="text-xs text-muted-foreground">
+            {docs.data?.length ?? 0} documents
+          </span>
+        </div>
         <div className="divide-y divide-border">
           {docs.isLoading &&
             Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="my-2 h-14 w-full" />
             ))}
           {docs.data?.map((d) => (
-            <div key={d.id} className="flex items-center gap-4 py-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent">
+            <div key={d.id} className="flex items-center gap-4 py-4 transition hover:bg-accent/20 -mx-2 px-2 rounded-lg">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{d.filename}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="truncate text-sm font-semibold">{d.filename}</div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   <FileType className="h-3 w-3" />
                   {d.type} · {(d.size_bytes / 1024).toFixed(0)} KB · {d.chunks} chunks ·{" "}
                   uploaded {format(new Date(d.uploaded_at), "MMM d")}
