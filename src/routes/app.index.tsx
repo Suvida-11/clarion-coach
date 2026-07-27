@@ -403,19 +403,19 @@ function LiveSessionCards({
           Open console →
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-7">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <div key={c.label} className="surface hover-lift rounded-xl p-3">
+            <div key={c.label} className="surface hover-lift flex h-full flex-col justify-between rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <Icon className={`h-4 w-4 ${c.accent}`} />
                 {c.hint && (
-                  <span className="text-[10px] uppercase text-muted-foreground">{c.hint}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{c.hint}</span>
                 )}
               </div>
-              <div className="mt-2 min-h-[24px]">{c.value}</div>
-              <div className="mt-0.5 text-[10px] uppercase text-muted-foreground">{c.label}</div>
+              <div className="mt-3 min-h-[28px]">{c.value}</div>
+              <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{c.label}</div>
             </div>
           );
         })}
