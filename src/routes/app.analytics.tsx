@@ -53,15 +53,15 @@ function Analytics() {
   const d = q.data;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Performance Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Performance Analytics</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
           How your team, agents, and knowledge base are performing.
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         <StatCard label="Avg Sentiment" value={d.avg_sentiment.toFixed(2)} sub="−1 to +1" />
         <StatCard label="Avg Resolution" value={`${d.avg_resolution}`} sub="of 100" />
         <StatCard label="Escalations (14d)" value={String(d.escalations)} sub="handled" />
