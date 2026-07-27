@@ -91,21 +91,21 @@ function Dashboard() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-8">
       {/* Header */}
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="truncate text-3xl font-bold tracking-tight md:text-4xl">
             Good afternoon, {firstName(user?.name ?? "there")} 👋
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
             Here's how your coaching workspace is performing today.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
           <Link to="/app/new-session">
-            <Button className="bg-brand text-primary-foreground hover:opacity-90">
-              <PlusCircle className="mr-1.5 h-4 w-4" />
+            <Button size="lg" className="bg-brand text-primary-foreground shadow-md hover:opacity-90">
+              <PlusCircle className="mr-2 h-4 w-4" />
               New session
             </Button>
           </Link>
@@ -116,33 +116,35 @@ function Dashboard() {
       <LiveSessionCards session={latest.data} isLoading={latest.isLoading} />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="surface hover-lift rounded-xl p-4">
+            <div key={s.label} className="surface hover-lift flex h-full flex-col justify-between rounded-2xl p-5">
               <div className="flex items-center justify-between">
-                <Icon className={`h-4 w-4 ${s.accent}`} />
+                <div className={`grid h-9 w-9 place-items-center rounded-lg bg-accent/60 ${s.accent}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
                 <span className="text-[10px] font-medium text-muted-foreground">
                   {s.trend}
                 </span>
               </div>
-              <div className="mt-3 text-2xl font-black">
-                {analytics.isLoading ? <Skeleton className="h-7 w-16" /> : s.value}
+              <div className="mt-4 text-3xl font-black leading-none tracking-tight">
+                {analytics.isLoading ? <Skeleton className="h-8 w-16" /> : s.value}
               </div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
+              <div className="mt-1.5 text-xs font-medium text-muted-foreground">{s.label}</div>
             </div>
           );
         })}
       </div>
 
       {/* Charts + Recent */}
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="surface rounded-2xl p-5">
-          <div className="mb-4 flex items-center justify-between">
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="surface hover-lift rounded-2xl p-6">
+          <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold">Sentiment Trend</h3>
-              <p className="text-xs text-muted-foreground">Last 14 days</p>
+              <h3 className="text-base font-semibold tracking-tight">Sentiment Trend</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">Last 14 days</p>
             </div>
             <Badge variant="secondary" className="gap-1">
               <TrendingUp className="h-3 w-3" />
@@ -183,9 +185,12 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="surface rounded-2xl p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold">Resolution Score</h3>
+        <div className="surface hover-lift rounded-2xl p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold tracking-tight">Resolution Score</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">Last 14 days</p>
+            </div>
             <span className="text-xs text-muted-foreground">14d</span>
           </div>
           <div className="h-64">
@@ -218,10 +223,10 @@ function Dashboard() {
       </div>
 
       {/* Recent sessions */}
-      <div className="surface rounded-2xl p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-semibold">Recent sessions</h3>
-          <Link to="/app/analytics" className="text-xs text-primary hover:underline">
+      <div className="surface rounded-2xl p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <h3 className="text-base font-semibold tracking-tight">Recent sessions</h3>
+          <Link to="/app/analytics" className="text-xs font-medium text-primary hover:underline">
             View all
           </Link>
         </div>
@@ -398,19 +403,19 @@ function LiveSessionCards({
           Open console →
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-7">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <div key={c.label} className="surface hover-lift rounded-xl p-3">
+            <div key={c.label} className="surface hover-lift flex h-full flex-col justify-between rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <Icon className={`h-4 w-4 ${c.accent}`} />
                 {c.hint && (
-                  <span className="text-[10px] uppercase text-muted-foreground">{c.hint}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{c.hint}</span>
                 )}
               </div>
-              <div className="mt-2 min-h-[24px]">{c.value}</div>
-              <div className="mt-0.5 text-[10px] uppercase text-muted-foreground">{c.label}</div>
+              <div className="mt-3 min-h-[28px]">{c.value}</div>
+              <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{c.label}</div>
             </div>
           );
         })}

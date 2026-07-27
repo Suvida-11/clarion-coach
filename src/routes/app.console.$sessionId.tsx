@@ -152,7 +152,7 @@ function Console() {
   const emotion = deriveEmotion(analysis);
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-3 pb-6">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-4 pb-8">
       {/* Session header + risk */}
       <div className="glass grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl p-3 sm:flex sm:justify-between">
         <div className="min-w-0">
@@ -235,7 +235,7 @@ function Console() {
       )}
 
       {/* Three-panel workspace */}
-      <div className="grid min-h-0 gap-3 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
+      <div className="grid min-h-0 gap-4 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
         {/* LEFT: Conversation */}
         <section className="surface flex min-h-0 flex-col rounded-2xl">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -271,19 +271,19 @@ function Console() {
               />
             </div>
           </div>
-          <ScrollArea className="flex-1 px-4">
-            <div ref={scrollRef} className="space-y-4 py-4">
+          <ScrollArea className="flex-1 px-5">
+            <div ref={scrollRef} className="space-y-5 py-5">
               {visibleMessages.map((m) => (
                 <MessageBubble key={m.id} m={m} />
               ))}
               {!visibleMessages.length && (
-                <div className="py-8 text-center text-xs text-muted-foreground">
+                <div className="py-12 text-center text-xs text-muted-foreground">
                   {search ? "No matches" : "Conversation is empty"}
                 </div>
               )}
               {typing && (
-                <div className="flex gap-2">
-                  <div className="grid h-8 w-8 place-items-center rounded-full bg-accent">
+                <div className="flex gap-2.5">
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-accent">
                     <User className="h-4 w-4" />
                   </div>
                   <div className="glass flex items-center gap-1 rounded-2xl rounded-tl-sm px-4 py-3">
@@ -411,25 +411,27 @@ function MessageBubble({ m }: { m: ChatMessage }) {
   const user = useCurrentUser();
   const agentLabel = user ? firstName(user.name) : "You";
   return (
-    <div className={`flex gap-2 ${isAgent ? "flex-row-reverse" : ""}`}>
+    <div className={`flex gap-2.5 ${isAgent ? "flex-row-reverse" : ""}`}>
       <div
-        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
-          isAgent ? "bg-brand text-primary-foreground" : "bg-accent"
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full shadow-sm ring-1 ${
+          isAgent
+            ? "bg-brand text-primary-foreground ring-primary/30"
+            : "bg-accent ring-border"
         }`}
       >
         {isAgent ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
       </div>
-      <div className={`max-w-[75%] ${isAgent ? "items-end" : ""} flex flex-col`}>
+      <div className={`max-w-[78%] ${isAgent ? "items-end" : ""} flex flex-col`}>
         <div
-          className={`rounded-2xl px-4 py-2.5 text-sm ${
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
             isAgent
               ? "rounded-tr-sm bg-brand text-primary-foreground"
-              : "glass rounded-tl-sm"
+              : "rounded-tl-sm border border-border bg-card text-card-foreground"
           }`}
         >
           {m.content}
         </div>
-        <div className="mt-1 px-1 text-[10px] text-muted-foreground">
+        <div className="mt-1.5 px-1 text-[10px] font-medium text-muted-foreground">
           {isAgent ? agentLabel : "Customer"} · {format(new Date(m.timestamp), "HH:mm:ss")}
         </div>
       </div>

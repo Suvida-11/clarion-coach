@@ -37,7 +37,7 @@ export function Sidebar() {
           <Logo />
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-3 py-6">
         {nav.map((item) => {
           const Icon = item.icon;
           const active = item.exact
@@ -47,10 +47,10 @@ export function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+              className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />

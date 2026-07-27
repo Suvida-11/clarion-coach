@@ -53,22 +53,22 @@ function Analytics() {
   const d = q.data;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Performance Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Performance Analytics</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
           How your team, agents, and knowledge base are performing.
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         <StatCard label="Avg Sentiment" value={d.avg_sentiment.toFixed(2)} sub="−1 to +1" />
         <StatCard label="Avg Resolution" value={`${d.avg_resolution}`} sub="of 100" />
         <StatCard label="Escalations (14d)" value={String(d.escalations)} sub="handled" />
         <StatCard label="CSAT" value={d.csat.toFixed(1)} sub="of 5.0" accent="text-success" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard title="Escalation trend" subtitle="Daily escalations, last 14 days">
           <BarChart data={d.escalation_series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -154,10 +154,10 @@ function StatCard({
   accent?: string;
 }) {
   return (
-    <div className="surface hover-lift rounded-xl p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-2 text-2xl font-black ${accent}`}>{value}</div>
-      <div className="text-xs text-muted-foreground">{sub}</div>
+    <div className="surface hover-lift flex h-full flex-col justify-between rounded-2xl p-5">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`mt-3 text-3xl font-black leading-none tracking-tight ${accent}`}>{value}</div>
+      <div className="mt-1.5 text-xs text-muted-foreground">{sub}</div>
     </div>
   );
 }
@@ -172,12 +172,12 @@ function ChartCard({
   children: React.ReactElement;
 }) {
   return (
-    <div className="surface rounded-2xl p-5">
-      <div className="mb-3">
-        <h3 className="font-semibold">{title}</h3>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <div className="surface hover-lift flex h-full flex-col rounded-2xl p-6">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
       </div>
-      <div className="h-64">
+      <div className="h-64 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           {children}
         </ResponsiveContainer>

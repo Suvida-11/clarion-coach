@@ -60,21 +60,22 @@ function KnowledgePage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold md:text-3xl">Knowledge Base</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+    <div className="mx-auto max-w-6xl space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Knowledge Base</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
             Upload PDFs, DOCX and TXT. Clario chunks, embeds, and indexes them for
             retrieval by the coaching agent.
           </p>
         </div>
         <Button
-          className="bg-brand text-primary-foreground hover:opacity-90"
+          size="lg"
+          className="bg-brand text-primary-foreground shadow-md hover:opacity-90"
           onClick={() => fileRef.current?.click()}
           disabled={uploadMut.isPending}
         >
-          <Upload className="mr-1.5 h-4 w-4" />
+          <Upload className="mr-2 h-4 w-4" />
           {uploadMut.isPending ? "Uploading…" : "Upload document"}
         </Button>
         <input
@@ -90,32 +91,50 @@ function KnowledgePage() {
         />
       </div>
 
+      {/* Upload dropzone */}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={uploadMut.isPending}
+        className="group flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-card/30 px-6 py-10 text-center transition hover:border-primary/50 hover:bg-primary/5"
+      >
+        <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-105">
+          <Upload className="h-5 w-5" />
+        </div>
+        <div className="text-sm font-semibold">
+          {uploadMut.isPending ? "Uploading & indexing…" : "Drop a file or click to upload"}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Supports PDF, DOCX, TXT, MD · Auto-chunked and embedded for RAG
+        </div>
+      </button>
+
       {/* Search */}
-      <div className="surface rounded-2xl p-5">
-        <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+      <div className="surface rounded-2xl p-6">
+        <h3 className="mb-4 flex items-center gap-2 text-base font-semibold tracking-tight">
           <Sparkles className="h-4 w-4 text-primary" />
           Test retrieval
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && search()}
               placeholder="e.g. how do we handle damaged earbuds refunds?"
-              className="pl-9"
+              className="h-11 pl-10 text-sm"
             />
           </div>
-          <Button onClick={search} disabled={searching}>
+          <Button size="lg" onClick={search} disabled={searching}>
             {searching ? "Searching…" : "Search"}
           </Button>
         </div>
         {results.length > 0 && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 space-y-3">
             {results.map((c) => (
-              <div key={c.id} className="glass rounded-lg p-3">
-                <div className="mb-1 flex items-center justify-between">
+              <div key={c.id} className="glass hover-lift rounded-xl p-4">
+                <div className="mb-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-[10px]">{c.type}</Badge>
                     <span className="text-sm font-semibold">{c.title}</span>
@@ -124,8 +143,8 @@ function KnowledgePage() {
                     {(c.similarity * 100).toFixed(0)}% match
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">{c.preview}</p>
-                <div className="mt-1.5 font-mono text-[10px] text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">{c.preview}</p>
+                <div className="mt-2 font-mono text-[10px] text-muted-foreground">
                   {c.source}
                 </div>
               </div>
@@ -135,21 +154,26 @@ function KnowledgePage() {
       </div>
 
       {/* Documents */}
-      <div className="surface rounded-2xl p-5">
-        <h3 className="mb-3 text-sm font-semibold">Indexed documents</h3>
+      <div className="surface rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold tracking-tight">Indexed documents</h3>
+          <span className="text-xs text-muted-foreground">
+            {docs.data?.length ?? 0} documents
+          </span>
+        </div>
         <div className="divide-y divide-border">
           {docs.isLoading &&
             Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="my-2 h-14 w-full" />
             ))}
           {docs.data?.map((d) => (
-            <div key={d.id} className="flex items-center gap-4 py-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent">
+            <div key={d.id} className="flex items-center gap-4 py-4 transition hover:bg-accent/20 -mx-2 px-2 rounded-lg">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{d.filename}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="truncate text-sm font-semibold">{d.filename}</div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   <FileType className="h-3 w-3" />
                   {d.type} · {(d.size_bytes / 1024).toFixed(0)} KB · {d.chunks} chunks ·{" "}
                   uploaded {format(new Date(d.uploaded_at), "MMM d")}
