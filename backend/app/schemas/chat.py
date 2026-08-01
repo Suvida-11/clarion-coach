@@ -45,12 +45,25 @@ class IntentAnalysis(BaseModel):
     satisfaction_trend: Literal["improving", "steady", "declining"] = "steady"
 
 
+class CoachingScores(BaseModel):
+    tone: float = 0.0
+    clarity: float = 0.0
+    grammar: float = 0.0
+    professionalism: float = 0.0
+    empathy: float = 0.0
+
+
 class CoachingSuggestion(BaseModel):
     suggested_response: str
     tone_notes: list[str] = Field(default_factory=list)
+    clarity_notes: list[str] = Field(default_factory=list)
     grammar_notes: list[str] = Field(default_factory=list)
     empathy_notes: list[str] = Field(default_factory=list)
     professional_notes: list[str] = Field(default_factory=list)
+    improvement_tips: list[str] = Field(default_factory=list)
+    scores: CoachingScores = Field(default_factory=CoachingScores)
+    coaching_score: float = 0.0
+    score_reasoning: str = ""
 
 
 class RetrievedChunk(BaseModel):
@@ -67,6 +80,9 @@ class EscalationRisk(BaseModel):
     level: RiskLevel
     reasoning: str
     recommended_action: str
+    repeated_complaints: int = 0
+    resolution_status: Literal["unresolved", "in_progress", "resolved"] = "unresolved"
+    signals: list[str] = Field(default_factory=list)
 
 
 class ChatRequest(BaseModel):
@@ -81,7 +97,11 @@ class AgentTraceEntry(BaseModel):
     execution_time: str = "0 ms"
     summary: str = ""
     timestamp: str = ""
+    started_at: str = ""
+    ended_at: str = ""
+    execution_ms: int = 0
     details: dict = Field(default_factory=dict)
+
 
 
 class ChatTurnResponse(BaseModel):
