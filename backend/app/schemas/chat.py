@@ -177,3 +177,40 @@ class Settings(BaseModel):
     theme: Literal["dark", "light", "system"] = "dark"
     language: str = "English"
     notifications: NotificationSettings = NotificationSettings()
+
+
+# ---------------------------------------------------------------------------
+# Replay mode
+# ---------------------------------------------------------------------------
+class ReplayMessage(BaseModel):
+    index: int
+    role: Literal["customer", "agent", "system"]
+    content: str
+
+
+class ReplayTurn(BaseModel):
+    index: int
+    role: Literal["customer", "agent", "system"]
+    message: str
+    analysis: Optional[IntentAnalysis] = None
+    coaching: Optional[CoachingSuggestion] = None
+    knowledge: list[RetrievedChunk] = Field(default_factory=list)
+    risk: Optional[EscalationRisk] = None
+    agent_trace: list[AgentTraceEntry] = Field(default_factory=list)
+
+
+class ReplayTranscript(BaseModel):
+    session_id: str
+    filename: str
+    total_messages: int
+    messages: list[ReplayMessage] = Field(default_factory=list)
+
+
+class ReplayStepRequest(BaseModel):
+    session_id: str
+    index: int
+
+
+class ReplayAnalyzeRequest(BaseModel):
+    session_id: str
+    transcript: Optional[str] = None
