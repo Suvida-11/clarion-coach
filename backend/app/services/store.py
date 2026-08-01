@@ -2,7 +2,13 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
-from ..schemas.chat import ChatMessage, ChatTurnResponse, Session, SessionConfig
+from ..schemas.chat import (
+    ChatMessage,
+    ChatTurnResponse,
+    ReplayTranscript,
+    Session,
+    SessionConfig,
+)
 
 _sessions: dict[str, Session] = {}
 _turns: dict[str, list[ChatTurnResponse]] = {}
@@ -48,3 +54,24 @@ def record_turn(sid: str, turn: ChatTurnResponse) -> None:
 
 def session_turns(sid: str) -> list[ChatTurnResponse]:
     return _turns.get(sid, [])
+
+
+# ---------------------------------------------------------------------------
+# Replay transcripts
+# ---------------------------------------------------------------------------
+_transcripts: dict[str, "ReplayTranscript"] = {}
+
+
+def save_transcript(transcript: "ReplayTranscript") -> "ReplayTranscript":
+    _transcripts[transcript.session_id] = transcript
+    return transcript
+
+
+def get_transcript(sid: str) -> "ReplayTranscript | None":
+    return _transcripts.get(sid)
+
+
+def clear_turns(sid: str) -> None:
+    _turns[sid] = []
+    if sid in _sessions:
+        _sessions[sid].turn_count = 0

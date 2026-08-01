@@ -1,7 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routes import analytics, chat, knowledge, report, session, settings as settings_route
+from .prompts.system_prompts import prompt_versions
+from .routes import (
+    analytics,
+    chat,
+    knowledge,
+    replay,
+    report,
+    session,
+    settings as settings_route,
+)
 
 app = FastAPI(title="Clario AI API", version="1.0.0")
 
@@ -16,6 +25,7 @@ app.add_middleware(
 app.include_router(session.router)
 app.include_router(chat.router)
 app.include_router(knowledge.router)
+app.include_router(replay.router)
 app.include_router(report.router)
 app.include_router(analytics.router)
 app.include_router(settings_route.router)
@@ -28,4 +38,8 @@ def root() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "gemini_configured": bool(settings.GEMINI_API_KEY)}
+    return {
+        "ok": True,
+        "gemini_configured": bool(settings.GEMINI_API_KEY),
+        "prompt_versions": prompt_versions(),
+    }
