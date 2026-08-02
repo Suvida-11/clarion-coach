@@ -32,12 +32,16 @@ import type {
   AnalyticsSummary,
   ChatTurnResponse,
   KnowledgeDocument,
+  ReplayMessage,
+  ReplayTranscript,
+  ReplayTurn,
   Report,
   RetrievedChunk,
   Session,
   SessionConfig,
   Settings,
 } from "./types";
+
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
 export const USING_MOCKS = !BASE_URL;
