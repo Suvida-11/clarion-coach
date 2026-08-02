@@ -5,7 +5,7 @@ import type { ChatMessage, ChatTurnResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Send,
@@ -27,33 +27,51 @@ import {
   HelpCircle,
   Brain,
   BookOpen,
+  ShieldAlert,
+  Workflow,
+  MessagesSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { AgentExecutionPanel } from "@/components/AgentExecutionPanel";
 import { useCurrentUser, firstName } from "@/lib/user";
-import { Input } from "@/components/ui/input";
-import { IntentAnalysisPanel, type EmotionPoint, deriveEmotionFromAnalysis } from "@/components/IntentAnalysisPanel";
-import { CoachingPanel } from "@/components/CoachingPanel";
+import {
+  IntentAnalysisPanel,
+  type EmotionPoint,
+  deriveEmotionFromAnalysis,
+} from "@/components/IntentAnalysisPanel";
+import { CoachingFeed } from "@/components/CoachingFeed";
 import { KnowledgePanel } from "@/components/KnowledgePanel";
+import { EscalationPanel, EscalationBanner } from "@/components/EscalationPanel";
+import { AgentTraceTimeline } from "@/components/AgentTraceTimeline";
+import { recordSnapshot } from "@/lib/live-state";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/console/$sessionId")({
-  head: () => ({ meta: [{ title: "Live Coaching Console — Clario AI" }] }),
+  head: () => ({
+    meta: [
+      { title: "Live Support Console — Clarion Coach" },
+      {
+        name: "description",
+        content:
+          "Real-time AI coaching console with live intent analysis, knowledge recommendations, escalation monitoring and agent trace.",
+      },
+      { property: "og:title", content: "Live Support Console — Clarion Coach" },
+      {
+        property: "og:description",
+        content: "Coach support agents in real time with a six-agent AI pipeline.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Console,
 });
 
+type RightTab = "knowledge" | "escalation" | "trace";
 
 function Console() {
   const { sessionId } = Route.useParams();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "seed1",
-      role: "customer",
-      content:
-        "This is absolutely ridiculous. My order came in broken and no one is responding!",
-      timestamp: new Date(Date.now() - 60_000).toISOString(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [latest, setLatest] = useState<ChatTurnResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,14 +81,15 @@ function Console() {
   const [search, setSearch] = useState("");
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<ChatTurnResponse[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [tab, setTab] = useState<RightTab>("knowledge");
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, typing]);
 
   async function send() {
-    if (!input.trim() || paused || ended) return;
+    if (!input.trim() || paused || ended || loading) return;
     const text = input;
     setInput("");
     setLoading(true);
@@ -79,6 +98,7 @@ function Console() {
       setMessages((m) => [...m, resp.turn]);
       setLatest(resp);
       setAnalysisHistory((h) => [...h, resp]);
+      recordSnapshot(sessionId, "simulator", resp);
       if (resp.simulated_customer_reply) {
         setTyping(true);
         setTimeout(() => {
@@ -95,13 +115,16 @@ function Console() {
 
   function downloadChat() {
     const text = messages
-      .map((m) => `[${format(new Date(m.timestamp), "HH:mm:ss")}] ${m.role.toUpperCase()}: ${m.content}`)
+      .map(
+        (m) =>
+          `[${format(new Date(m.timestamp), "HH:mm:ss")}] ${m.role.toUpperCase()}: ${m.content}`,
+      )
       .join("\n");
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `clario-session-${sessionId}.txt`;
+    a.download = `clarion-session-${sessionId}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Transcript downloaded");
@@ -114,7 +137,6 @@ function Console() {
     setAnalysisHistory([]);
     toast.success("Conversation cleared");
   }
-
 
   function replayConversation() {
     if (!messages.length) return;
@@ -141,56 +163,72 @@ function Console() {
   const analysis = latest?.analysis;
   const coaching = latest?.coaching;
   const kb = latest?.knowledge ?? [];
-  const emotionTimeline = useMemo<EmotionPoint[]>(() => {
-    return analysisHistory.map((h, i) => {
-      const emo = deriveEmotionFromAnalysis(h.analysis);
-      const value =
-        emo === "happy" ? 2 : emo === "neutral" ? 0 : emo === "confused" ? -1 : emo === "frustrated" ? -1.5 : -2;
-      return { turn: i + 1, emotion: emo, value };
-    });
-  }, [analysisHistory]);
+  const emotionTimeline = useMemo<EmotionPoint[]>(
+    () =>
+      analysisHistory.map((h, i) => {
+        const emo = deriveEmotionFromAnalysis(h.analysis);
+        const value =
+          emo === "happy"
+            ? 2
+            : emo === "neutral"
+              ? 0
+              : emo === "confused"
+                ? -1
+                : emo === "frustrated"
+                  ? -1.5
+                  : -2;
+        return { turn: i + 1, emotion: emo, value };
+      }),
+    [analysisHistory],
+  );
   const emotion = deriveEmotion(analysis);
 
+  const tabs: { id: RightTab; label: string; icon: typeof BookOpen; count?: number }[] = [
+    { id: "knowledge", label: "Knowledge", icon: BookOpen, count: kb.length },
+    { id: "escalation", label: "Escalation", icon: ShieldAlert },
+    { id: "trace", label: "Agent trace", icon: Workflow, count: latest?.agent_trace?.length },
+  ];
+
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-[1600px] flex-col gap-4 pb-8">
-      {/* Session header + risk */}
-      <div className="glass grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl p-3 sm:flex sm:justify-between">
+    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-6">
+      {/* Session header */}
+      <header className="surface flex flex-wrap items-center justify-between gap-4 rounded-2xl px-5 py-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-success" />
-            Live · <span className="font-mono">{sessionId}</span>
+            Live support console ·{" "}
+            <span className="font-mono">{sessionId}</span>
           </div>
-          <div className="truncate text-sm font-semibold">
-            Refund dispute — Orbit Wireless Earbuds
-          </div>
+          <h1 className="mt-1 text-lg font-semibold tracking-tight">Simulator session</h1>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <EmotionBadge emotion={emotion} />
           {risk && (
             <Badge
-              variant={risk.level === "high" || risk.level === "critical" ? "destructive" : "secondary"}
-              className="gap-1"
+              variant={
+                risk.level === "high" || risk.level === "critical" ? "destructive" : "secondary"
+              }
+              className="gap-1.5"
             >
               <AlertTriangle className="h-3 w-3" />
               {risk.level.toUpperCase()} · {(risk.probability * 100).toFixed(0)}%
             </Badge>
           )}
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-background/40 p-0.5">
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-background/40 p-1">
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 gap-1 px-2 text-xs"
+              className="h-8 gap-1.5 px-2.5 text-xs"
               onClick={() => setPaused((p) => !p)}
               disabled={ended}
-              title={paused ? "Resume" : "Pause"}
             >
-              {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+              {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
               {paused ? "Resume" : "Pause"}
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 gap-1 px-2 text-xs"
+              className="h-8 gap-1.5 px-2.5 text-xs"
               onClick={() => {
                 setMessages([]);
                 setLatest(null);
@@ -200,102 +238,136 @@ function Console() {
                 setAnalysisHistory([]);
                 toast.success("Simulation reset");
               }}
-              title="Reset"
             >
-              <RotateCcw className="h-3 w-3" />
+              <RotateCcw className="h-3.5 w-3.5" />
               Reset
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+              className="h-8 gap-1.5 px-2.5 text-xs text-destructive hover:text-destructive"
               onClick={() => {
                 setEnded(true);
                 setPaused(true);
                 toast.info("Simulation ended");
               }}
               disabled={ended}
-              title="End simulation"
             >
-              <Square className="h-3 w-3" />
+              <Square className="h-3.5 w-3.5" />
               End
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {risk && (risk.level === "high" || risk.level === "critical") && (
-        <div className="flex items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
-          <div className="min-w-0 flex-1">
-            <span className="font-semibold text-destructive">Escalation risk elevated. </span>
-            {risk.recommended_action}
-          </div>
-        </div>
-      )}
+      <EscalationBanner risk={risk} />
 
-      {/* Three-panel workspace */}
-      <div className="grid min-h-0 gap-4 lg:h-[calc(100vh-14rem)] lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
-        {/* LEFT: Conversation */}
-        <section className="surface flex min-h-0 flex-col rounded-2xl">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <div>
-              <h3 className="text-sm font-semibold">Conversation</h3>
-              <div className="text-xs text-muted-foreground">
+      {/* Three-column workspace */}
+      <div className="grid min-h-0 gap-6 xl:h-[calc(100vh-16rem)] xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.95fr)]">
+        {/* LEFT — conversation */}
+        <section className="surface flex min-h-[520px] flex-col overflow-hidden rounded-2xl">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <div className="min-w-0">
+              <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                <MessagesSquare className="h-4 w-4 text-primary" />
+                Conversation
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {messages.length} turns
                 {paused && !ended && <span className="ml-1.5 text-warning">· paused</span>}
                 {ended && <span className="ml-1.5 text-destructive">· ended</span>}
                 {replayIndex !== null && <span className="ml-1.5 text-primary">· replaying</span>}
-              </div>
+              </p>
             </div>
-            <div className="flex items-center gap-1">
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={replayConversation} title="Replay">
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={replayConversation}
+                title="Replay conversation"
+              >
                 <Play className="h-3.5 w-3.5" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={downloadChat} title="Download">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={downloadChat}
+                title="Download transcript"
+              >
                 <Download className="h-3.5 w-3.5" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearChat} title="Clear">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={clearChat}
+                title="Clear conversation"
+              >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
-          <div className="border-b border-border px-3 py-2">
+
+          <div className="border-b border-border px-5 py-3">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search conversation…"
-                className="h-8 pl-8 text-xs"
+                className="h-9 pl-9 text-sm"
               />
             </div>
           </div>
-          <ScrollArea className="flex-1 px-5">
-            <div ref={scrollRef} className="space-y-5 py-5">
+
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="space-y-6 px-5 py-6">
               {visibleMessages.map((m) => (
                 <MessageBubble key={m.id} m={m} />
               ))}
               {!visibleMessages.length && (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  {search ? "No matches" : "Conversation is empty"}
+                <div className="py-16 text-center text-sm text-muted-foreground">
+                  {search ? "No matching messages" : "Start the conversation below."}
                 </div>
               )}
               {typing && (
-                <div className="flex gap-2.5">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-accent">
+                <div className="flex gap-3">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent">
                     <User className="h-4 w-4" />
                   </div>
-                  <div className="glass flex items-center gap-1 rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="surface flex items-center gap-1.5 rounded-2xl rounded-tl-md px-4 py-3">
                     <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                    <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-muted-foreground" style={{ animationDelay: "0.15s" }} />
-                    <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-muted-foreground" style={{ animationDelay: "0.3s" }} />
+                    <span
+                      className="pulse-dot h-1.5 w-1.5 rounded-full bg-muted-foreground"
+                      style={{ animationDelay: "0.15s" }}
+                    />
+                    <span
+                      className="pulse-dot h-1.5 w-1.5 rounded-full bg-muted-foreground"
+                      style={{ animationDelay: "0.3s" }}
+                    />
                   </div>
                 </div>
               )}
+              <div ref={bottomRef} />
             </div>
           </ScrollArea>
-          <div className="border-t border-border p-3">
+
+          {/* Sticky composer */}
+          <div className="sticky bottom-0 border-t border-border bg-card/95 p-4 backdrop-blur">
+            {coaching && (
+              <button
+                onClick={() => setInput(coaching.suggested_response)}
+                className="mb-3 flex w-full items-start gap-2.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3.5 py-2.5 text-left text-xs transition-colors hover:bg-primary/10"
+              >
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="wrap-anywhere line-clamp-2 flex-1 leading-relaxed">
+                  <span className="font-semibold text-primary">Use suggestion: </span>
+                  {coaching.suggested_response}
+                </span>
+              </button>
+            )}
             <div className="relative">
               <Textarea
                 value={input}
@@ -307,80 +379,91 @@ function Console() {
                   }
                 }}
                 placeholder="Type your response as the support agent…"
-                className="min-h-[80px] resize-none pr-12"
+                className="min-h-[92px] resize-none pr-14 text-sm leading-relaxed"
+                disabled={paused || ended}
               />
               <Button
                 size="icon"
                 onClick={send}
-                disabled={loading || !input.trim()}
-                className="absolute bottom-2 right-2 h-8 w-8 bg-brand text-primary-foreground hover:opacity-90"
+                disabled={loading || !input.trim() || paused || ended}
+                className="absolute bottom-2.5 right-2.5 h-9 w-9 bg-brand text-primary-foreground hover:opacity-90"
+                title="Send"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            {coaching && (
-              <button
-                onClick={() => setInput(coaching.suggested_response)}
-                className="mt-2 flex w-full items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-xs hover:bg-primary/10"
-              >
-                <Sparkles className="h-3 w-3 shrink-0 text-primary" />
-                <span className="line-clamp-1 flex-1">
-                  <span className="font-semibold text-primary">Use suggestion:</span>{" "}
-                  {coaching.suggested_response}
-                </span>
-              </button>
-            )}
           </div>
         </section>
 
-        {/* Intent & sentiment side panel */}
-        <section className="surface flex min-h-0 flex-col rounded-2xl">
+        {/* CENTER — live coaching feed */}
+        <section className="surface flex min-h-[520px] flex-col overflow-hidden rounded-2xl">
           <PanelHeader
-            title="Intent & Sentiment"
-            subtitle={analysis ? `conf ${(analysis.confidence * 100).toFixed(0)}%` : "awaiting"}
-            icon={Brain}
-          />
-          <ScrollArea className="flex-1 p-4">
-            <IntentAnalysisPanel
-              analysis={analysis}
-              risk={risk}
-              emotionTimeline={emotionTimeline}
-            />
-          </ScrollArea>
-        </section>
-
-        {/* Coaching panel */}
-        <section className="surface flex min-h-0 flex-col rounded-2xl">
-          <PanelHeader
-            title="AI Coaching"
-            subtitle="Real-time guidance"
             icon={Sparkles}
+            title="Live coaching feed"
+            subtitle={
+              coaching
+                ? `score ${Math.round(
+                    (coaching.coaching_score ?? 0) <= 1
+                      ? (coaching.coaching_score ?? 0) * 100
+                      : (coaching.coaching_score ?? 0),
+                  )}/100`
+                : "awaiting first turn"
+            }
           />
-          <ScrollArea className="flex-1 p-4">
-            <CoachingPanel
-              coaching={coaching}
-              risk={risk}
-              onUseSuggestion={(t) => setInput(t)}
-            />
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="space-y-4 p-5">
+              <CoachingFeed coaching={coaching} risk={risk} onUseSuggestion={setInput} />
+              <div className="pt-2">
+                <h3 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Brain className="h-3.5 w-3.5 text-primary" /> Intent &amp; sentiment
+                </h3>
+                <IntentAnalysisPanel
+                  analysis={analysis}
+                  risk={risk}
+                  emotionTimeline={emotionTimeline}
+                />
+              </div>
+            </div>
           </ScrollArea>
         </section>
 
-        {/* Knowledge recommendation panel */}
-        <section className="surface flex min-h-0 flex-col rounded-2xl">
-          <PanelHeader
-            title="Knowledge Base"
-            subtitle={`${kb.length} matches · RAG`}
-            icon={BookOpen}
-          />
-          <ScrollArea className="flex-1 p-4">
-            <KnowledgePanel chunks={kb} />
+        {/* RIGHT — knowledge / escalation / trace */}
+        <section className="surface flex min-h-[520px] flex-col overflow-hidden rounded-2xl">
+          <div className="flex gap-1 border-b border-border p-2">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2.5 text-xs font-medium transition-colors",
+                    active
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-accent/40",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{t.label}</span>
+                  {typeof t.count === "number" && t.count > 0 && (
+                    <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">
+                      {t.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="p-5">
+              {tab === "knowledge" && <KnowledgePanel chunks={kb} />}
+              {tab === "escalation" && <EscalationPanel risk={risk} />}
+              {tab === "trace" && <AgentTraceTimeline trace={latest?.agent_trace} />}
+            </div>
           </ScrollArea>
         </section>
       </div>
-
-
-      {/* Agent Execution Pipeline */}
-      <AgentExecutionPanel trace={latest?.agent_trace} />
     </div>
   );
 }
@@ -395,39 +478,38 @@ function PanelHeader({
   icon?: typeof Sparkles;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-border px-4 py-3">
-      <div className="flex items-center gap-2">
-        {Icon && <Icon className="h-3.5 w-3.5 text-primary" />}
-        <h3 className="text-sm font-semibold">{title}</h3>
-      </div>
-      <span className="text-xs text-muted-foreground">{subtitle}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+      <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+        {Icon && <Icon className="h-4 w-4 text-primary" />}
+        {title}
+      </h2>
+      <span className="shrink-0 text-xs text-muted-foreground">{subtitle}</span>
     </div>
   );
 }
-
 
 function MessageBubble({ m }: { m: ChatMessage }) {
   const isAgent = m.role === "agent";
   const user = useCurrentUser();
   const agentLabel = user ? firstName(user.name) : "You";
   return (
-    <div className={`flex gap-2.5 ${isAgent ? "flex-row-reverse" : ""}`}>
+    <div className={cn("flex gap-3", isAgent && "flex-row-reverse")}>
       <div
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full shadow-sm ring-1 ${
-          isAgent
-            ? "bg-brand text-primary-foreground ring-primary/30"
-            : "bg-accent ring-border"
-        }`}
+        className={cn(
+          "grid h-9 w-9 shrink-0 place-items-center rounded-full shadow-sm ring-1",
+          isAgent ? "bg-brand text-primary-foreground ring-primary/30" : "bg-accent ring-border",
+        )}
       >
         {isAgent ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
       </div>
-      <div className={`max-w-[78%] ${isAgent ? "items-end" : ""} flex flex-col`}>
+      <div className={cn("flex min-w-0 max-w-[82%] flex-col", isAgent && "items-end")}>
         <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+          className={cn(
+            "wrap-anywhere whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
             isAgent
-              ? "rounded-tr-sm bg-brand text-primary-foreground"
-              : "rounded-tl-sm border border-border bg-card text-card-foreground"
-          }`}
+              ? "rounded-tr-md bg-primary text-primary-foreground"
+              : "rounded-tl-md border border-border bg-card text-card-foreground",
+          )}
         >
           {m.content}
         </div>
@@ -438,8 +520,6 @@ function MessageBubble({ m }: { m: ChatMessage }) {
     </div>
   );
 }
-
-
 
 type Emotion = "Happy" | "Neutral" | "Confused" | "Frustrated" | "Angry";
 
@@ -462,17 +542,25 @@ function EmotionBadge({ emotion }: { emotion: Emotion }) {
     Happy: { Icon: Smile, className: "bg-success/15 text-success border-success/30" },
     Neutral: { Icon: Meh, className: "bg-muted text-muted-foreground border-border" },
     Confused: { Icon: HelpCircle, className: "bg-warning/15 text-warning border-warning/30" },
-    Frustrated: { Icon: Frown, className: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
-    Angry: { Icon: AngryIcon, className: "bg-destructive/15 text-destructive border-destructive/30" },
+    Frustrated: {
+      Icon: Frown,
+      className: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+    },
+    Angry: {
+      Icon: AngryIcon,
+      className: "bg-destructive/15 text-destructive border-destructive/30",
+    },
   };
   const { Icon, className } = map[emotion];
   return (
-    <div className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium ${className}`}>
-      <Icon className="h-3 w-3" />
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+        className,
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
       {emotion}
-    </div>
+    </span>
   );
 }
-
-// used
-void Progress;

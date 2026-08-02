@@ -7,6 +7,8 @@ import {
   Settings as SettingsIcon,
   PlusCircle,
   FileText,
+  ClipboardPaste,
+
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
@@ -21,6 +23,8 @@ const nav: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/new-session", label: "New Session", icon: PlusCircle },
   { to: "/app/console/sess_a91k2", label: "Live Console", icon: MessageSquareText },
+  { to: "/app/manual", label: "Manual Mode", icon: ClipboardPaste },
+
   { to: "/app/knowledge", label: "Knowledge Base", icon: BookOpen },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/reports/sess_88f0x", label: "Reports", icon: FileText },

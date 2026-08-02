@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppNewSessionRouteImport } from './routes/app.new-session'
+import { Route as AppManualRouteImport } from './routes/app.manual'
 import { Route as AppKnowledgeRouteImport } from './routes/app.knowledge'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppReportsSessionIdRouteImport } from './routes/app.reports.$sessionId'
@@ -68,6 +69,11 @@ const AppNewSessionRoute = AppNewSessionRouteImport.update({
   path: '/new-session',
   getParentRoute: () => AppRoute,
 } as any)
+const AppManualRoute = AppManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppKnowledgeRoute = AppKnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/knowledge': typeof AppKnowledgeRoute
+  '/app/manual': typeof AppManualRoute
   '/app/new-session': typeof AppNewSessionRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/knowledge': typeof AppKnowledgeRoute
+  '/app/manual': typeof AppManualRoute
   '/app/new-session': typeof AppNewSessionRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/knowledge': typeof AppKnowledgeRoute
+  '/app/manual': typeof AppManualRoute
   '/app/new-session': typeof AppNewSessionRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/app/analytics'
     | '/app/knowledge'
+    | '/app/manual'
     | '/app/new-session'
     | '/app/settings'
     | '/app/'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/app/analytics'
     | '/app/knowledge'
+    | '/app/manual'
     | '/app/new-session'
     | '/app/settings'
     | '/app'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/app/analytics'
     | '/app/knowledge'
+    | '/app/manual'
     | '/app/new-session'
     | '/app/settings'
     | '/app/'
@@ -255,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewSessionRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/manual': {
+      id: '/app/manual'
+      path: '/manual'
+      fullPath: '/app/manual'
+      preLoaderRoute: typeof AppManualRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/knowledge': {
       id: '/app/knowledge'
       path: '/knowledge'
@@ -289,6 +308,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppKnowledgeRoute: typeof AppKnowledgeRoute
+  AppManualRoute: typeof AppManualRoute
   AppNewSessionRoute: typeof AppNewSessionRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -299,6 +319,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppKnowledgeRoute: AppKnowledgeRoute,
+  AppManualRoute: AppManualRoute,
   AppNewSessionRoute: AppNewSessionRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,

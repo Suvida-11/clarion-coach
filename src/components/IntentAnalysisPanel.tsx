@@ -37,7 +37,7 @@ export interface EmotionPoint {
 interface Props {
   analysis: IntentAnalysis | null | undefined;
   risk: EscalationRisk | null | undefined;
-  emotionTimeline: EmotionPoint[];
+  emotionTimeline?: EmotionPoint[];
 }
 
 const EMOTION_META: Record<EmotionKey, { label: string; icon: typeof Smile; color: string; value: number }> = {
@@ -68,7 +68,7 @@ export function AgentEmotionBadge({ emotion }: { emotion: EmotionKey }) {
   );
 }
 
-export function IntentAnalysisPanel({ analysis, risk, emotionTimeline }: Props) {
+export function IntentAnalysisPanel({ analysis, risk, emotionTimeline = [] }: Props) {
   if (!analysis) {
     return (
       <div className="grid h-full place-items-center px-6 py-12 text-center">
