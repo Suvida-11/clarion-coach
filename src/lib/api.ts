@@ -155,4 +155,89 @@ export const api = {
     if (USING_MOCKS) return mock(s);
     return req("/settings", { method: "PUT", body: JSON.stringify(s) });
   },
+
+  // ----- Replay mode (backend: /replay/*) -----
+  async replayUpload(file: File, sessionId?: string): Promise<ReplayTranscript> {
+    if (USING_MOCKS) {
+      const text = await file.text();
+      const messages = parseTranscriptText(text);
+      return {
+        session_id: sessionId ?? `sess_replay_${Math.random().toString(36).slice(2, 8)}`,
+        filename: file.name,
+        total_messages: messages.length,
+        messages,
+      };
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    if (sessionId) fd.append("session_id", sessionId);
+    const res = await fetch(`${BASE_URL}/replay/upload`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+    return (await res.json()) as ReplayTranscript;
+  },
+
+  replayTranscript(sessionId: string): Promise<ReplayTranscript> {
+    return req(`/replay/${sessionId}`);
+  },
+
+  async replayStep(
+    sessionId: string,
+    index: number,
+    fallbackMessage?: ReplayMessage,
+  ): Promise<ReplayTurn> {
+    if (USING_MOCKS) {
+      const msg = fallbackMessage!;
+      const turn = await mockChatTurn({
+        session_id: sessionId,
+        message: msg.content,
+        role: msg.role === "agent" ? "agent" : "customer",
+      });
+      return {
+        index: msg.index,
+        role: msg.role,
+        message: msg.content,
+        analysis: turn.analysis,
+        coaching: turn.coaching,
+        knowledge: turn.knowledge,
+        risk: turn.risk,
+        agent_trace: turn.agent_trace,
+      };
+    }
+    return req("/replay/step", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId, index }),
+    });
+  },
 };
+
+/**
+ * Client-side transcript parsing, mirroring the backend parser in
+ * backend/app/routes/replay.py. Only used when no API base URL is configured.
+ */
+export function parseTranscriptText(text: string): ReplayMessage[] {
+  const customer = new Set(["customer", "user", "client", "caller", "them"]);
+  const agent = new Set(["agent", "support", "rep", "representative", "assistant", "me", "you"]);
+  const system = new Set(["system", "note"]);
+  const re = /^\s*(?:\[[^\]]*\]\s*)?([A-Za-z ]{2,20}?)\s*[:>-]\s*(.+)$/;
+  const out: ReplayMessage[] = [];
+  let next: ReplayMessage["role"] = "customer";
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    let role: ReplayMessage["role"] | null = null;
+    let content = line;
+    const m = re.exec(line);
+    if (m) {
+      const label = m[1].trim().toLowerCase();
+      const body = m[2].trim();
+      if (customer.has(label)) [role, content] = ["customer", body];
+      else if (agent.has(label)) [role, content] = ["agent", body];
+      else if (system.has(label)) [role, content] = ["system", body];
+    }
+    if (role === null) role = next;
+    next = role === "customer" ? "agent" : "customer";
+    if (content) out.push({ index: out.length, role, content });
+  }
+  return out;
+}
+
