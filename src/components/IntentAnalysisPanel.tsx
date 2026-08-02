@@ -37,7 +37,7 @@ export interface EmotionPoint {
 interface Props {
   analysis: IntentAnalysis | null | undefined;
   risk: EscalationRisk | null | undefined;
-  emotionTimeline: EmotionPoint[];
+  emotionTimeline?: EmotionPoint[];
 }
 
 const EMOTION_META: Record<EmotionKey, { label: string; icon: typeof Smile; color: string; value: number }> = {
