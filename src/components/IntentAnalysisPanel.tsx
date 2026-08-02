@@ -68,7 +68,7 @@ export function AgentEmotionBadge({ emotion }: { emotion: EmotionKey }) {
   );
 }
 
-export function IntentAnalysisPanel({ analysis, risk, emotionTimeline }: Props) {
+export function IntentAnalysisPanel({ analysis, risk, emotionTimeline = [] }: Props) {
   if (!analysis) {
     return (
       <div className="grid h-full place-items-center px-6 py-12 text-center">
