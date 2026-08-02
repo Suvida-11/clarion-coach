@@ -7,6 +7,8 @@ import {
   Settings as SettingsIcon,
   PlusCircle,
   FileText,
+  ClipboardPaste,
+
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
