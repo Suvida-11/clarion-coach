@@ -49,12 +49,25 @@ export interface IntentAnalysis {
   conversation_summary?: string;
 }
 
+export interface CoachingScores {
+  tone: number;
+  clarity: number;
+  grammar: number;
+  professionalism: number;
+  empathy: number;
+}
+
 export interface CoachingSuggestion {
   suggested_response: string;
   tone_notes: string[];
+  clarity_notes?: string[];
   grammar_notes: string[];
   empathy_notes: string[];
   professional_notes: string[];
+  improvement_tips?: string[];
+  scores?: CoachingScores;
+  coaching_score?: number;
+  score_reasoning?: string;
   empathy_tip?: string;
   tone_improvement?: string;
   next_best_action?: string;
@@ -76,6 +89,9 @@ export interface EscalationRisk {
   level: "low" | "medium" | "high" | "critical";
   reasoning: string;
   recommended_action: string;
+  repeated_complaints?: number;
+  resolution_status?: "unresolved" | "in_progress" | "resolved";
+  signals?: string[];
 }
 
 export interface AgentTraceEntry {
@@ -84,8 +100,36 @@ export interface AgentTraceEntry {
   execution_time: string;
   summary: string;
   timestamp?: string;
+  started_at?: string;
+  ended_at?: string;
+  execution_ms?: number;
   details?: Record<string, unknown>;
 }
+
+export interface ReplayMessage {
+  index: number;
+  role: "customer" | "agent" | "system";
+  content: string;
+}
+
+export interface ReplayTranscript {
+  session_id: string;
+  filename: string;
+  total_messages: number;
+  messages: ReplayMessage[];
+}
+
+export interface ReplayTurn {
+  index: number;
+  role: "customer" | "agent" | "system";
+  message: string;
+  analysis?: IntentAnalysis | null;
+  coaching?: CoachingSuggestion | null;
+  knowledge: RetrievedChunk[];
+  risk?: EscalationRisk | null;
+  agent_trace?: AgentTraceEntry[];
+}
+
 
 export interface ChatTurnResponse {
   turn: ChatMessage;
