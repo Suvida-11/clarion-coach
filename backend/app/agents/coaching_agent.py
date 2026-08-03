@@ -51,21 +51,73 @@ def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
         return lo
 
 
-def _heuristic_scores(analysis: IntentAnalysis) -> CoachingScores:
-    """Derive plausible dimension scores from the detected emotional state."""
-    base = 82.0 - 25.0 * analysis.frustration + 8.0 * max(0.0, analysis.sentiment_score)
+# Evaluation never legitimately produces 0 for a real reply; keep a realistic floor.
+_SCORE_FLOOR = 60.0
+
+
+def _heuristic_scores(
+    analysis: IntentAnalysis,
+    message: str = "",
+    knowledge_titles: Iterable[str] | None = None,
+) -> CoachingScores:
+    """Derive plausible dimension scores from the message and emotional state."""
+    text = (message or "").strip()
+    lower = text.lower()
+    words = [w for w in text.split() if w]
+    sentences = [s for s in text.replace("!", ".").replace("?", ".").split(".") if s.strip()]
+    avg_sentence = (len(words) / len(sentences)) if sentences else len(words)
+
+    empathy_hits = sum(
+        1 for w in ("sorry", "understand", "apolog", "appreciate", "frustrat", "thank", "hear you")
+        if w in lower
+    )
+    action_hits = sum(
+        1 for w in ("i will", "i'll", "i've", "let me", "issued", "sending", "confirm", "arrange", "processing")
+        if w in lower
+    )
+    specific = any(c.isdigit() for c in text) or any(
+        w in lower for w in ("today", "tomorrow", "reference", "within")
+    )
+    polite = any(w in lower for w in ("please", "thank", "happy to", "of course"))
+    titles = [t for t in (knowledge_titles or []) if t]
+    grounded = any(
+        any(tok in lower for tok in [w.lower() for w in t.split() if len(w) > 4]) for t in titles
+    )
+    length_fit = 0.3 if len(words) < 6 else 0.7 if len(words) < 15 else 1.0 if len(words) <= 70 else 0.75
+
+    base = 4.0 * max(0.0, analysis.sentiment_score) - 3.0 * analysis.frustration
+
+    def s(v: float) -> float:
+        return round(_clamp(v + base, _SCORE_FLOOR, 100.0), 1)
+
     return CoachingScores(
-        tone=round(_clamp(base + 3), 1),
-        clarity=round(_clamp(base + 5), 1),
-        grammar=round(_clamp(base + 9), 1),
-        professionalism=round(_clamp(base + 2), 1),
-        empathy=round(_clamp(base - 6 * analysis.urgency + 4), 1),
+        tone=s(70 + empathy_hits * 5 + (6 if polite else 0) + length_fit * 8),
+        clarity=s(68 + (12 if avg_sentence <= 20 else 5 if avg_sentence <= 28 else -4)
+                  + (10 if specific else 0) + length_fit * 6),
+        grammar=s(78 + (10 if avg_sentence <= 22 else 0) + (6 if text.endswith((".", "!", "?")) else -3)),
+        professionalism=s(72 + action_hits * 4 + (8 if specific else 0) + (4 if polite else 0) + length_fit * 5),
+        empathy=s(64 + empathy_hits * 8 + (5 if polite else 0) + length_fit * 6
+                  - 6 * analysis.urgency),
+        knowledge_grounding=s(64 + (22 if grounded else 0) + (8 if specific else 0) + action_hits * 2),
+        resolution_quality=s(63 + action_hits * 6 + (12 if specific else 0) + (4 if empathy_hits else 0)),
     )
 
 
 def _overall(scores: CoachingScores) -> float:
-    vals = [scores.tone, scores.clarity, scores.grammar, scores.professionalism, scores.empathy]
+    vals = [
+        scores.tone,
+        scores.clarity,
+        scores.grammar,
+        scores.professionalism,
+        scores.empathy,
+        scores.knowledge_grounding,
+        scores.resolution_quality,
+    ]
+    vals = [v for v in vals if v > 0]
+    if not vals:
+        return _SCORE_FLOOR
     return round(sum(vals) / len(vals), 1)
+
 
 
 def _fallback(message: str, analysis: IntentAnalysis, seen: set[str] | None = None) -> CoachingSuggestion:
