@@ -263,7 +263,19 @@ def handle_chat(
     ]
     sim = _run_agent(
         "Customer Simulator Agent",
-        lambda: simulate_customer(persona, scenario, req.message, history=history),
+        lambda: simulate_customer(
+            persona,
+            scenario,
+            req.message,
+            history=history,
+            product=getattr(getattr(sess, "config", None), "product", None),
+            difficulty=getattr(getattr(sess, "config", None), "difficulty", None),
+            previous_customer_messages=[
+                m.get("content", "") for m in history if m.get("role") == "customer"
+            ],
+            turn_number=len([m for m in history if m.get("role") == "customer"]) + 1,
+        ),
+
         lambda s: (
             "Generated realistic customer reply",
             {
