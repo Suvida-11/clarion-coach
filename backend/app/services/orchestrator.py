@@ -161,6 +161,9 @@ def _pipeline(
             previous_suggestions=ctx["previous_suggestions"],
             previous_tips=ctx["previous_tips"],
             knowledge_titles=[c.title for c in knowledge],
+            knowledge_previews=[getattr(c, "content", "") or "" for c in knowledge],
+            agent_message=agent_message if "agent_message" in dir() else "",
+
         ),
         lambda c: (
             f"Coaching score {c.coaching_score}/100",
