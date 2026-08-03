@@ -27,7 +27,10 @@ import {
   mockReport,
   mockSessions,
   mockSettings,
+  registerMockSession,
+  resetMockSession,
 } from "./mock-data";
+
 import type {
   AnalyticsSummary,
   ChatTurnResponse,
@@ -66,17 +69,25 @@ const mock = <T>(value: T, ms = 350): Promise<T> =>
 export const api = {
   startSession(config: SessionConfig): Promise<Session> {
     if (USING_MOCKS) {
-      return mock({
+      const session: Session = {
         id: `sess_${Math.random().toString(36).slice(2, 10)}`,
         config,
         started_at: new Date().toISOString(),
         status: "active",
         turn_count: 0,
         resolution_score: null,
-      });
+      };
+      registerMockSession(session);
+      return mock(session);
     }
     return req("/session/start", { method: "POST", body: JSON.stringify(config) });
   },
+
+  /** Clears cached simulation state for a session (mock mode only). */
+  resetSession(sessionId: string) {
+    if (USING_MOCKS) resetMockSession(sessionId);
+  },
+
 
   latestSession(): Promise<Session | null> {
     if (USING_MOCKS) return mock(mockSessions[0] ?? null);

@@ -55,7 +55,10 @@ export interface CoachingScores {
   grammar: number;
   professionalism: number;
   empathy: number;
+  knowledge_grounding?: number;
+  resolution_quality?: number;
 }
+
 
 export interface CoachingSuggestion {
   suggested_response: string;
