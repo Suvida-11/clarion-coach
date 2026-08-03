@@ -51,6 +51,8 @@ class CoachingScores(BaseModel):
     grammar: float = 0.0
     professionalism: float = 0.0
     empathy: float = 0.0
+    knowledge_grounding: float = 0.0
+    resolution_quality: float = 0.0
 
 
 class CoachingSuggestion(BaseModel):

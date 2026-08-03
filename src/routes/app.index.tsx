@@ -30,7 +30,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import {
   deriveEmotionFromAnalysis,
   AgentEmotionBadge,
@@ -222,11 +222,16 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Recent sessions */}
+      {/* Past conversations */}
       <div className="surface rounded-2xl p-6">
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-base font-semibold tracking-tight">Recent sessions</h3>
-          <Link to="/app/analytics" className="text-xs font-medium text-primary hover:underline">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold tracking-tight">Past conversations</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Reopen a session to review its conversation, knowledge, coaching and escalation.
+            </p>
+          </div>
+          <Link to="/app/analytics" className="shrink-0 text-xs font-medium text-primary hover:underline">
             View all
           </Link>
         </div>
@@ -240,33 +245,41 @@ function Dashboard() {
               key={s.id}
               to="/app/console/$sessionId"
               params={{ sessionId: s.id }}
-              className="flex items-center gap-4 py-3 transition hover:bg-accent/30"
+              className="flex items-center gap-4 rounded-xl px-2 py-3.5 transition hover:bg-accent/30"
             >
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-xs font-mono">
-                {s.id.slice(-4)}
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-primary">
+                <MessageSquare className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{s.config.scenario}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="truncate text-sm font-semibold">{s.config.scenario}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
                     {s.config.persona}
                   </Badge>
-                  <span>{s.config.mode}</span>
+                  <span className="capitalize">{s.config.mode}</span>
                   <span>·</span>
-                  <span>{formatDistanceToNow(new Date(s.started_at))} ago</span>
+                  <span>{format(new Date(s.started_at), "d MMM")}</span>
+                  <span>·</span>
+                  <span>{s.turn_count} turns</span>
                 </div>
               </div>
-              <div className="hidden text-right sm:block">
-                <div className="text-xs text-muted-foreground">Resolution</div>
-                <div className="text-sm font-semibold">
-                  {s.resolution_score ?? "—"}
+              <div className="hidden shrink-0 text-right sm:block">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Coaching
                 </div>
+                <div className="text-sm font-semibold">{s.resolution_score ?? "—"}</div>
               </div>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
           ))}
+          {!sessions.isLoading && !sessions.data?.length && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No past conversations yet — start a session to build your history.
+            </p>
+          )}
         </div>
       </div>
+
     </div>
   );
 }

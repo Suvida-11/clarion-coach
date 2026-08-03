@@ -51,24 +51,82 @@ def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
         return lo
 
 
-def _heuristic_scores(analysis: IntentAnalysis) -> CoachingScores:
-    """Derive plausible dimension scores from the detected emotional state."""
-    base = 82.0 - 25.0 * analysis.frustration + 8.0 * max(0.0, analysis.sentiment_score)
+# Evaluation never legitimately produces 0 for a real reply; keep a realistic floor.
+_SCORE_FLOOR = 60.0
+
+
+def _heuristic_scores(
+    analysis: IntentAnalysis,
+    message: str = "",
+    knowledge_titles: Iterable[str] | None = None,
+) -> CoachingScores:
+    """Derive plausible dimension scores from the message and emotional state."""
+    text = (message or "").strip()
+    lower = text.lower()
+    words = [w for w in text.split() if w]
+    sentences = [s for s in text.replace("!", ".").replace("?", ".").split(".") if s.strip()]
+    avg_sentence = (len(words) / len(sentences)) if sentences else len(words)
+
+    empathy_hits = sum(
+        1 for w in ("sorry", "understand", "apolog", "appreciate", "frustrat", "thank", "hear you")
+        if w in lower
+    )
+    action_hits = sum(
+        1 for w in ("i will", "i'll", "i've", "let me", "issued", "sending", "confirm", "arrange", "processing")
+        if w in lower
+    )
+    specific = any(c.isdigit() for c in text) or any(
+        w in lower for w in ("today", "tomorrow", "reference", "within")
+    )
+    polite = any(w in lower for w in ("please", "thank", "happy to", "of course"))
+    titles = [t for t in (knowledge_titles or []) if t]
+    grounded = any(
+        any(tok in lower for tok in [w.lower() for w in t.split() if len(w) > 4]) for t in titles
+    )
+    length_fit = 0.3 if len(words) < 6 else 0.7 if len(words) < 15 else 1.0 if len(words) <= 70 else 0.75
+
+    base = 4.0 * max(0.0, analysis.sentiment_score) - 3.0 * analysis.frustration
+
+    def s(v: float) -> float:
+        return round(_clamp(v + base, _SCORE_FLOOR, 100.0), 1)
+
     return CoachingScores(
-        tone=round(_clamp(base + 3), 1),
-        clarity=round(_clamp(base + 5), 1),
-        grammar=round(_clamp(base + 9), 1),
-        professionalism=round(_clamp(base + 2), 1),
-        empathy=round(_clamp(base - 6 * analysis.urgency + 4), 1),
+        tone=s(70 + empathy_hits * 5 + (6 if polite else 0) + length_fit * 8),
+        clarity=s(68 + (12 if avg_sentence <= 20 else 5 if avg_sentence <= 28 else -4)
+                  + (10 if specific else 0) + length_fit * 6),
+        grammar=s(78 + (10 if avg_sentence <= 22 else 0) + (6 if text.endswith((".", "!", "?")) else -3)),
+        professionalism=s(72 + action_hits * 4 + (8 if specific else 0) + (4 if polite else 0) + length_fit * 5),
+        empathy=s(64 + empathy_hits * 8 + (5 if polite else 0) + length_fit * 6
+                  - 6 * analysis.urgency),
+        knowledge_grounding=s(64 + (22 if grounded else 0) + (8 if specific else 0) + action_hits * 2),
+        resolution_quality=s(63 + action_hits * 6 + (12 if specific else 0) + (4 if empathy_hits else 0)),
     )
 
 
 def _overall(scores: CoachingScores) -> float:
-    vals = [scores.tone, scores.clarity, scores.grammar, scores.professionalism, scores.empathy]
+    vals = [
+        scores.tone,
+        scores.clarity,
+        scores.grammar,
+        scores.professionalism,
+        scores.empathy,
+        scores.knowledge_grounding,
+        scores.resolution_quality,
+    ]
+    vals = [v for v in vals if v > 0]
+    if not vals:
+        return _SCORE_FLOOR
     return round(sum(vals) / len(vals), 1)
 
 
-def _fallback(message: str, analysis: IntentAnalysis, seen: set[str] | None = None) -> CoachingSuggestion:
+
+def _fallback(
+    message: str,
+    analysis: IntentAnalysis,
+    seen: set[str] | None = None,
+    agent_message: str = "",
+    knowledge_titles: Iterable[str] | None = None,
+) -> CoachingSuggestion:
     seen = seen or set()
 
     def pick(pool: list[str], n: int = 2) -> list[str]:
@@ -76,7 +134,8 @@ def _fallback(message: str, analysis: IntentAnalysis, seen: set[str] | None = No
         random.shuffle(remaining)
         return remaining[:n] if remaining else pool[:n]
 
-    scores = _heuristic_scores(analysis)
+    titles = [t for t in (knowledge_titles or []) if t]
+    scores = _heuristic_scores(analysis, agent_message, titles)
     overall = _overall(scores)
     return CoachingSuggestion(
         suggested_response=(
@@ -92,8 +151,10 @@ def _fallback(message: str, analysis: IntentAnalysis, seen: set[str] | None = No
         scores=scores,
         coaching_score=overall,
         score_reasoning=(
-            f"Scored {overall}/100 from tone, clarity, grammar, professionalism and empathy, "
-            f"adjusted for {analysis.sentiment} sentiment and frustration at {analysis.frustration}."
+            f"Scored {overall}/100 across tone, clarity, grammar, professionalism, empathy, "
+            f"knowledge grounding and resolution quality"
+            + (f" against \"{titles[0]}\"" if titles else "")
+            + f", adjusted for {analysis.sentiment} sentiment and frustration at {analysis.frustration}."
         ),
     )
 
@@ -105,6 +166,8 @@ def coach(
     previous_suggestions: Iterable[str] | None = None,
     previous_tips: Iterable[str] | None = None,
     knowledge_titles: Iterable[str] | None = None,
+    agent_message: str = "",
+    knowledge_previews: Iterable[str] | None = None,
 ) -> CoachingSuggestion:
     hist_txt = ""
     if history:
@@ -112,15 +175,23 @@ def coach(
     prev_sugg = list(previous_suggestions or [])
     prev_tips = list(previous_tips or [])
     kb = list(knowledge_titles or [])
+    kb_prev = list(knowledge_previews or [])
     seen = set(prev_sugg) | set(prev_tips)
 
     prompt = (
         f'Customer message: """{message}"""\n'
+        f'Support agent reply being evaluated: """{agent_message or "(agent has not replied yet)"}"""\n'
         f"Detected intent: {analysis.intent}\n"
         f"Sentiment: {analysis.sentiment} (score={analysis.sentiment_score})\n"
         f"Frustration: {analysis.frustration}, Urgency: {analysis.urgency}\n"
-        f"Retrieved knowledge: {', '.join(kb) if kb else '(none)'}\n\n"
-        f"Conversation history so far:\n{hist_txt or '(none)'}\n\n"
+        f"Retrieved knowledge titles: {', '.join(kb) if kb else '(none)'}\n"
+        f"Retrieved knowledge content:\n"
+        + ("\n".join(f"- {p}" for p in kb_prev[:3]) if kb_prev else "(none)")
+        + f"\n\nConversation history so far:\n{hist_txt or '(none)'}\n\n"
+        "Score every dimension between 60 and 100 for a genuine reply; never return 0 "
+        "unless the reply is empty. Tailor all advice to this specific issue "
+        f"({analysis.intent}) and explain WHY each improvement matters, citing the "
+        "retrieved knowledge where relevant.\n\n"
         f"Previous suggested responses (DO NOT repeat wording):\n"
         + ("\n".join(f"- {s}" for s in prev_sugg) if prev_sugg else "(none)")
         + "\n\nPrevious coaching tips already shown (rotate to fresh angles):\n"
@@ -128,7 +199,7 @@ def coach(
     )
     data = generate_json(prompt, system=SYSTEM)
     if not data:
-        return _fallback(message, analysis, seen)
+        return _fallback(message, analysis, seen, agent_message, kb)
     try:
         data.pop("empathy_score", None)
         for k in (
@@ -148,40 +219,55 @@ def coach(
                 # dedupe against tips already shown this session
                 data[k] = [x for x in v if isinstance(x, str) and x.strip() and x not in seen]
 
-        # Normalize the five evaluation dimensions.
-        raw_scores = data.get("scores")
-        if isinstance(raw_scores, dict):
-            fb = _heuristic_scores(analysis)
-            scores = CoachingScores(
-                tone=round(_clamp(raw_scores.get("tone", fb.tone)), 1),
-                clarity=round(_clamp(raw_scores.get("clarity", fb.clarity)), 1),
-                grammar=round(_clamp(raw_scores.get("grammar", fb.grammar)), 1),
-                professionalism=round(_clamp(raw_scores.get("professionalism", fb.professionalism)), 1),
-                empathy=round(_clamp(raw_scores.get("empathy", fb.empathy)), 1),
-            )
-        else:
-            scores = _heuristic_scores(analysis)
+        # Normalize the seven evaluation dimensions, never allowing a 0 score
+        # through for a genuine reply.
+        fb = _heuristic_scores(analysis, agent_message, kb)
+        raw_scores = data.get("scores") if isinstance(data.get("scores"), dict) else {}
+
+        def dim(name: str, default: float) -> float:
+            raw = raw_scores.get(name)
+            if not isinstance(raw, (int, float)) or float(raw) <= 0:
+                return default
+            value = float(raw) * 100 if float(raw) <= 1 else float(raw)
+            return round(_clamp(value, _SCORE_FLOOR, 100.0), 1)
+
+        scores = CoachingScores(
+            tone=dim("tone", fb.tone),
+            clarity=dim("clarity", fb.clarity),
+            grammar=dim("grammar", fb.grammar),
+            professionalism=dim("professionalism", fb.professionalism),
+            empathy=dim("empathy", fb.empathy),
+            knowledge_grounding=dim("knowledge_grounding", fb.knowledge_grounding),
+            resolution_quality=dim("resolution_quality", fb.resolution_quality),
+        )
         data["scores"] = scores
 
         overall = data.get("coaching_score")
-        overall = _clamp(overall) if isinstance(overall, (int, float)) else _overall(scores)
+        if isinstance(overall, (int, float)) and float(overall) > 0:
+            overall = float(overall) * 100 if float(overall) <= 1 else float(overall)
+            overall = _clamp(overall, _SCORE_FLOOR, 100.0)
+        else:
+            overall = _overall(scores)
         # keep the headline score consistent with the dimension average
         if abs(overall - _overall(scores)) > 12:
             overall = round((overall + _overall(scores)) / 2, 1)
-        data["coaching_score"] = round(overall, 1)
+        data["coaching_score"] = round(_clamp(overall, _SCORE_FLOOR, 100.0), 1)
 
         reasoning = (data.get("score_reasoning") or "").strip()
         if not reasoning:
             reasoning = (
                 f"Scored {data['coaching_score']}/100 across tone, clarity, grammar, "
-                f"professionalism and empathy for a {analysis.sentiment} "
-                f"{analysis.intent} conversation."
+                f"professionalism, empathy, knowledge grounding and resolution quality for a "
+                f"{analysis.sentiment} {analysis.intent} conversation."
             )
         data["score_reasoning"] = reasoning
 
         sr = (data.get("suggested_response") or "").strip()
         if not sr or sr in prev_sugg:
-            data["suggested_response"] = _fallback(message, analysis, seen).suggested_response
+            data["suggested_response"] = _fallback(
+                message, analysis, seen, agent_message, kb
+            ).suggested_response
         return CoachingSuggestion(**data)
     except Exception:
-        return _fallback(message, analysis, seen)
+        return _fallback(message, analysis, seen, agent_message, kb)
+

@@ -104,14 +104,21 @@ export function CoachingFeed({ coaching, risk, onUseSuggestion }: Props) {
           </Badge>
         </div>
         {scores && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-5 grid gap-x-5 gap-y-3.5 sm:grid-cols-2">
             <ScoreBar label="tone" value={scores.tone} />
-            <ScoreBar label="clarity" value={scores.clarity} />
-            <ScoreBar label="grammar" value={scores.grammar} />
-            <ScoreBar label="professionalism" value={scores.professionalism} />
             <ScoreBar label="empathy" value={scores.empathy} />
+            <ScoreBar label="grammar" value={scores.grammar} />
+            <ScoreBar label="clarity" value={scores.clarity} />
+            <ScoreBar label="professionalism" value={scores.professionalism} />
+            {typeof scores.knowledge_grounding === "number" && (
+              <ScoreBar label="knowledge grounding" value={scores.knowledge_grounding} />
+            )}
+            {typeof scores.resolution_quality === "number" && (
+              <ScoreBar label="resolution quality" value={scores.resolution_quality} />
+            )}
           </div>
         )}
+
       </div>
 
       {/* Suggested response */}

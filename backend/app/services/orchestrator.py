@@ -102,7 +102,11 @@ def _session_context(session_id: str | None) -> dict[str, Any]:
         "frustration_series": [t.analysis.frustration for t in prev_turns],
         "intents": [t.analysis.intent for t in prev_turns],
         "turn_number": len(prev_turns) + 1,
+        "last_agent_message": next(
+            (m.get("content", "") for m in reversed(history) if m.get("role") == "agent"), ""
+        ),
     }
+
 
 
 def _pipeline(
@@ -161,6 +165,9 @@ def _pipeline(
             previous_suggestions=ctx["previous_suggestions"],
             previous_tips=ctx["previous_tips"],
             knowledge_titles=[c.title for c in knowledge],
+            knowledge_previews=[getattr(c, "content", "") or "" for c in knowledge],
+            agent_message=str(ctx.get("last_agent_message") or ""),
+
         ),
         lambda c: (
             f"Coaching score {c.coaching_score}/100",
@@ -256,7 +263,19 @@ def handle_chat(
     ]
     sim = _run_agent(
         "Customer Simulator Agent",
-        lambda: simulate_customer(persona, scenario, req.message, history=history),
+        lambda: simulate_customer(
+            persona,
+            scenario,
+            req.message,
+            history=history,
+            product=getattr(getattr(sess, "config", None), "product", None),
+            difficulty=getattr(getattr(sess, "config", None), "difficulty", None),
+            previous_customer_messages=[
+                m.get("content", "") for m in history if m.get("role") == "customer"
+            ],
+            turn_number=len([m for m in history if m.get("role") == "customer"]) + 1,
+        ),
+
         lambda s: (
             "Generated realistic customer reply",
             {

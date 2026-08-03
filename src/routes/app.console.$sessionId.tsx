@@ -30,6 +30,8 @@ import {
   ShieldAlert,
   Workflow,
   MessagesSquare,
+  ChevronDown,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -67,7 +69,7 @@ export const Route = createFileRoute("/app/console/$sessionId")({
   component: Console,
 });
 
-type RightTab = "knowledge" | "escalation" | "trace";
+type RightTab = "knowledge" | "escalation";
 
 function Console() {
   const { sessionId } = Route.useParams();
@@ -82,6 +84,8 @@ function Console() {
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<ChatTurnResponse[]>([]);
   const [tab, setTab] = useState<RightTab>("knowledge");
+  const [devMode, setDevMode] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -186,8 +190,8 @@ function Console() {
   const tabs: { id: RightTab; label: string; icon: typeof BookOpen; count?: number }[] = [
     { id: "knowledge", label: "Knowledge", icon: BookOpen, count: kb.length },
     { id: "escalation", label: "Escalation", icon: ShieldAlert },
-    { id: "trace", label: "Agent trace", icon: Workflow, count: latest?.agent_trace?.length },
   ];
+
 
   return (
     <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-6">
@@ -236,7 +240,9 @@ function Console() {
                 setPaused(false);
                 setReplayIndex(null);
                 setAnalysisHistory([]);
+                api.resetSession(sessionId);
                 toast.success("Simulation reset");
+
               }}
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -459,14 +465,49 @@ function Console() {
             <div className="p-5">
               {tab === "knowledge" && <KnowledgePanel chunks={kb} />}
               {tab === "escalation" && <EscalationPanel risk={risk} />}
-              {tab === "trace" && <AgentTraceTimeline trace={latest?.agent_trace} />}
             </div>
           </ScrollArea>
         </section>
       </div>
+
+      {/* Developer mode — advanced agent execution details, hidden by default */}
+      <section className="surface overflow-hidden rounded-2xl">
+        <button
+          onClick={() => setDevMode((d) => !d)}
+          className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-accent/30"
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            <Workflow className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold tracking-tight">
+                Developer mode · advanced details
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Agent execution trace, timings and per-agent summaries
+              </span>
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2">
+            {!!latest?.agent_trace?.length && (
+              <Badge variant="secondary" className="text-[10px]">
+                {latest.agent_trace.length} agents
+              </Badge>
+            )}
+            <ChevronDown
+              className={cn("h-4 w-4 text-muted-foreground transition-transform", devMode && "rotate-180")}
+            />
+          </span>
+        </button>
+        {devMode && (
+          <div className="border-t border-border p-5">
+            <AgentTraceTimeline trace={latest?.agent_trace} />
+          </div>
+        )}
+      </section>
     </div>
   );
 }
+
 
 function PanelHeader({
   title,
