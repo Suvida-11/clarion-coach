@@ -162,7 +162,7 @@ def _pipeline(
             previous_tips=ctx["previous_tips"],
             knowledge_titles=[c.title for c in knowledge],
             knowledge_previews=[getattr(c, "content", "") or "" for c in knowledge],
-            agent_message=agent_message if "agent_message" in dir() else "",
+            agent_message=str(ctx.get("last_agent_message") or ""),
 
         ),
         lambda c: (
