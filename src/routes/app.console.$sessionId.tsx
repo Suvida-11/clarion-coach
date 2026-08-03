@@ -240,7 +240,9 @@ function Console() {
                 setPaused(false);
                 setReplayIndex(null);
                 setAnalysisHistory([]);
+                api.resetSession(sessionId);
                 toast.success("Simulation reset");
+
               }}
             >
               <RotateCcw className="h-3.5 w-3.5" />
