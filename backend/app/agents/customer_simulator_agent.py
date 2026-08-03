@@ -109,7 +109,7 @@ def simulate_customer(
     prompt = (
         f"Scenario / issue: {scenario}\n"
         f"Persona: {persona}\n"
-        f"Product: {product or 'the customer\\'s order'}\n"
+        f"Product: {product or 'the customer order'}\n"
         f"Difficulty: {difficulty or 'Medium'}\n"
         f"Turn number: {turn_number}\n"
         f"Current frustration level (0-1): {round(frustration, 2)}\n"
