@@ -30,6 +30,8 @@ import {
   ShieldAlert,
   Workflow,
   MessagesSquare,
+  ChevronDown,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -67,7 +69,7 @@ export const Route = createFileRoute("/app/console/$sessionId")({
   component: Console,
 });
 
-type RightTab = "knowledge" | "escalation" | "trace";
+type RightTab = "knowledge" | "escalation";
 
 function Console() {
   const { sessionId } = Route.useParams();
@@ -82,6 +84,8 @@ function Console() {
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<ChatTurnResponse[]>([]);
   const [tab, setTab] = useState<RightTab>("knowledge");
+  const [devMode, setDevMode] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
