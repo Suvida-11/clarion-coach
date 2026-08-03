@@ -102,7 +102,11 @@ def _session_context(session_id: str | None) -> dict[str, Any]:
         "frustration_series": [t.analysis.frustration for t in prev_turns],
         "intents": [t.analysis.intent for t in prev_turns],
         "turn_number": len(prev_turns) + 1,
+        "last_agent_message": next(
+            (m.get("content", "") for m in reversed(history) if m.get("role") == "agent"), ""
+        ),
     }
+
 
 
 def _pipeline(
