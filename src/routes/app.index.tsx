@@ -96,7 +96,7 @@ function Dashboard() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0">
           <h1 className="truncate text-3xl font-bold tracking-tight md:text-4xl">
-            Good afternoon, {firstName(user?.name ?? "there")} 👋
+            👋 Welcome back, {firstName(user?.name ?? "there")}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
             Here's how your coaching workspace is performing today.
@@ -258,9 +258,19 @@ function Dashboard() {
                   </Badge>
                   <span className="capitalize">{s.config.mode}</span>
                   <span>·</span>
-                  <span>{format(new Date(s.started_at), "d MMM")}</span>
+                  <span>{format(new Date(s.started_at), "d MMM yyyy")}</span>
+                  <span>·</span>
+                  <span>{format(new Date(s.started_at), "HH:mm")}</span>
+                  <span>·</span>
+                  <span className="font-mono">{s.id}</span>
                   <span>·</span>
                   <span>{s.turn_count} turns</span>
+                  <Badge
+                    variant={s.status === "active" ? "default" : "secondary"}
+                    className="h-5 px-1.5 text-[10px] capitalize"
+                  >
+                    {s.status}
+                  </Badge>
                 </div>
               </div>
               <div className="hidden shrink-0 text-right sm:block">
