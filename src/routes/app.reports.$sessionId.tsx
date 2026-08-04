@@ -40,16 +40,17 @@ function ReportPage() {
       if (USING_MOCKS) {
         const report = q.data ?? (await api.report(sessionId));
         const archive = readArchive(sessionId);
-        const session = sessions.data?.find((s) => s.id === sessionId);
+        const config =
+          sessions.data?.find((s) => s.id === sessionId)?.config ?? archive?.config;
         blob = buildReportPdf({
           report,
           sessionId,
           userName: user?.name,
           archive,
-          scenario: session?.config.scenario,
-          product: session?.config.product,
-          persona: session?.config.persona,
-          mode: session?.config.mode,
+          scenario: config?.scenario,
+          product: config?.product,
+          persona: config?.persona,
+          mode: config?.mode,
         });
       } else {
         blob = await api.reportPdf(sessionId, user?.name);

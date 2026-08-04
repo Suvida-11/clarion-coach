@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { ChatMessage, ChatTurnResponse } from "@/lib/types";
@@ -88,6 +89,8 @@ function Console() {
   const [devMode, setDevMode] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api.sessionHistory() });
+  const sessionConfig = sessions.data?.find((s) => s.id === sessionId)?.config;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -104,8 +107,8 @@ function Console() {
 
   // Persist so Past Conversations can restore this session later.
   useEffect(() => {
-    saveArchive(sessionId, messages, analysisHistory);
-  }, [sessionId, messages, analysisHistory]);
+    saveArchive(sessionId, messages, analysisHistory, sessionConfig);
+  }, [sessionId, messages, analysisHistory, sessionConfig]);
 
   async function send() {
     if (!input.trim() || paused || ended || loading) return;

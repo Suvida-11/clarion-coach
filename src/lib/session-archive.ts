@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatTurnResponse } from "./types";
+import type { ChatMessage, ChatTurnResponse, SessionConfig } from "./types";
 
 /**
  * Per-session archive so Past Conversations can restore the transcript,
@@ -9,6 +9,7 @@ export interface SessionArchive {
   session_id: string;
   messages: ChatMessage[];
   turns: ChatTurnResponse[];
+  config?: SessionConfig;
   updated_at: string;
 }
 
@@ -18,6 +19,7 @@ export function saveArchive(
   sessionId: string,
   messages: ChatMessage[],
   turns: ChatTurnResponse[],
+  config?: SessionConfig,
 ): void {
   if (!messages.length && !turns.length) return;
   try {
@@ -25,6 +27,7 @@ export function saveArchive(
       session_id: sessionId,
       messages,
       turns,
+      config: config ?? readArchive(sessionId)?.config,
       updated_at: new Date().toISOString(),
     };
     localStorage.setItem(KEY(sessionId), JSON.stringify(archive));
