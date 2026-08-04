@@ -671,6 +671,7 @@ interface SimState {
   turn: number;
   frustration: number;
   usedCustomer: Set<string>;
+  usedCores: Set<string>;
   usedCoaching: Set<string>;
   usedKb: Map<string, number>;
   scores: number[];
@@ -681,7 +682,7 @@ const simStates = new Map<string, SimState>();
 function stateFor(sessionId: string): SimState {
   let s = simStates.get(sessionId);
   if (!s) {
-    s = { turn: 0, frustration: 0.7, usedCustomer: new Set(), usedCoaching: new Set(), usedKb: new Map(), scores: [] };
+    s = { turn: 0, frustration: 0.7, usedCustomer: new Set(), usedCores: new Set(), usedCoaching: new Set(), usedKb: new Map(), scores: [] };
     simStates.set(sessionId, s);
   }
   return s;
@@ -705,12 +706,43 @@ const FILLERS = [
   "I really don't have time for another back and forth.",
   "I just want someone to take ownership of it.",
   "This should not be this complicated.",
+  "Every time I get in touch it starts again from zero.",
+  "I've taken time off work for this, which is ridiculous.",
+  "At this point I'd settle for a straight answer.",
+  "You can probably tell I'm past being polite about it.",
+  "I've already told two other people the same story.",
 ];
 const CALM_FILLERS = [
   "I appreciate you looking into it.",
   "That's clearer than what I was told before.",
   "Okay, that's reasonable.",
   "Thanks for staying with it.",
+  "That's the kind of answer I was hoping for.",
+  "Right, that actually makes sense now.",
+  "Good — I can work with that.",
+  "Thanks for not fobbing me off.",
+];
+
+/** Hooks and follow-up beats so no two generated turns read the same. */
+const HOT_HOOKS = ["Look — ", "Right, ", "Okay, so ", "Honestly? ", "See, ", ""];
+const CALM_HOOKS = ["Okay — ", "Alright, ", "Right, ", "Thanks — ", ""];
+const HOT_FOLLOWUPS = [
+  "Can you confirm that in writing?",
+  "Who exactly is handling this now?",
+  "What's the actual date this gets resolved?",
+  "And if that doesn't happen, then what?",
+  "Is there a reference number I can quote?",
+  "How long am I expected to wait this time?",
+  "Why did nobody tell me any of this earlier?",
+  "Can you check that properly rather than guessing?",
+];
+const CALM_FOLLOWUPS = [
+  "Can you email me the confirmation?",
+  "Should I do anything on my side?",
+  "Is that reference something I can quote if I need to?",
+  "And you'll follow up if anything changes?",
+  "Do I need to keep this ticket open?",
+  "",
 ];
 
 const PERSONA_VOICE: Record<string, (s: string) => string> = {
@@ -724,6 +756,47 @@ const PERSONA_VOICE: Record<string, (s: string) => string> = {
   Beginner: (s) => `I'm not very technical, sorry. ${s}`,
   "VIP Customer": (s) => s,
 };
+
+const pick = <T,>(pool: T[]): T => pool[Math.floor(Math.random() * pool.length)];
+
+/**
+ * Compose a customer turn from a playbook core line plus randomised hooks and
+ * follow-up beats. Retries until the exact sentence has not been used in this
+ * session, so replies never repeat within or across sessions.
+ */
+function composeCustomerLine(
+  cores: string[],
+  calming: boolean,
+  state: SimState,
+  substitute: (s: string) => string,
+): string {
+  const hooks = calming ? CALM_HOOKS : HOT_HOOKS;
+  const followups = calming ? CALM_FOLLOWUPS : HOT_FOLLOWUPS;
+  const fillers = calming ? CALM_FILLERS : FILLERS;
+  const freshCores = cores.filter((c) => !state.usedCores.has(c));
+  const corePool = freshCores.length ? freshCores : cores;
+
+  let candidate = "";
+  for (let attempt = 0; attempt < 14; attempt += 1) {
+    const core = substitute(pick(corePool));
+    const hook = pick(hooks);
+    // Lowercase the first word after a hook unless it's "I" or a proper noun.
+    const firstWord = core.split(" ")[0] ?? "";
+    const joined =
+      hook && firstWord.slice(1) === firstWord.slice(1).toLowerCase() && firstWord !== "I"
+        ? hook + core.charAt(0).toLowerCase() + core.slice(1)
+        : hook + core;
+    const parts = [joined];
+    if (Math.random() > 0.45) parts.push(pick(fillers));
+    if (Math.random() > 0.4) parts.push(pick(followups));
+    candidate = parts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    state.usedCores.add(core);
+    if (!state.usedCustomer.has(candidate)) break;
+  }
+  state.usedCustomer.add(candidate);
+  return candidate;
+}
+
 
 /** Quality of the agent's own message — drives coaching scores and emotion. */
 function evaluateAgentMessage(text: string, kbTitles: string[]) {
@@ -877,15 +950,13 @@ export function mockChatTurn(payload: {
 
   const calming = state.frustration < 0.4;
   const stagePool = state.turn <= 1 ? pb.openers : calming ? pb.softeners : pb.pressers;
-  let line = pickFresh(stagePool, state.usedCustomer)
-    .replace(/\{product\}/g, product)
-    .replace(/\{days\}/g, String(3 + ((state.turn * 2) % 9)))
-    .replace(/\{nth\}/g, ["second", "third", "fourth", "fifth"][state.turn % 4]);
+  const substitute = (t: string) =>
+    t
+      .replace(/\{product\}/g, product)
+      .replace(/\{days\}/g, String(3 + Math.floor(Math.random() * 9)))
+      .replace(/\{nth\}/g, ["second", "third", "fourth", "fifth", "sixth"][(state.turn + Math.floor(Math.random() * 2)) % 5]);
 
-  // Add a persona-flavoured trailing beat so no two turns read identically.
-  if (Math.random() > 0.35) {
-    line = `${line} ${pickFresh(calming ? CALM_FILLERS : FILLERS, state.usedCustomer)}`;
-  }
+  let line = composeCustomerLine(stagePool, calming, state, substitute);
   line = (PERSONA_VOICE[persona] ?? ((s: string) => s))(line);
 
   const simulatedCustomer =

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { ChatMessage, ChatTurnResponse } from "@/lib/types";
@@ -45,6 +46,7 @@ import { CoachingFeed } from "@/components/CoachingFeed";
 import { KnowledgePanel } from "@/components/KnowledgePanel";
 import { EscalationPanel, EscalationBanner } from "@/components/EscalationPanel";
 import { AgentTraceTimeline } from "@/components/AgentTraceTimeline";
+import { readArchive, saveArchive, clearArchive } from "@/lib/session-archive";
 import { recordSnapshot } from "@/lib/live-state";
 import { cn } from "@/lib/utils";
 
@@ -87,10 +89,26 @@ function Console() {
   const [devMode, setDevMode] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api.sessionHistory() });
+  const sessionConfig = sessions.data?.find((s) => s.id === sessionId)?.config;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, typing]);
+
+  // Restore a previous conversation (transcript, coaching, knowledge, risk).
+  useEffect(() => {
+    const archive = readArchive(sessionId);
+    if (!archive) return;
+    setMessages(archive.messages);
+    setAnalysisHistory(archive.turns);
+    setLatest(archive.turns[archive.turns.length - 1] ?? null);
+  }, [sessionId]);
+
+  // Persist so Past Conversations can restore this session later.
+  useEffect(() => {
+    saveArchive(sessionId, messages, analysisHistory, sessionConfig);
+  }, [sessionId, messages, analysisHistory, sessionConfig]);
 
   async function send() {
     if (!input.trim() || paused || ended || loading) return;
@@ -139,6 +157,7 @@ function Console() {
     setLatest(null);
     setReplayIndex(null);
     setAnalysisHistory([]);
+    clearArchive(sessionId);
     toast.success("Conversation cleared");
   }
 
@@ -240,6 +259,7 @@ function Console() {
                 setPaused(false);
                 setReplayIndex(null);
                 setAnalysisHistory([]);
+                clearArchive(sessionId);
                 api.resetSession(sessionId);
                 toast.success("Simulation reset");
 

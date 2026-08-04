@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { api } from "@/lib/api";
+import { api, USING_MOCKS } from "@/lib/api";
+import { readArchive } from "@/lib/session-archive";
+import { buildReportPdf } from "@/lib/report-pdf";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,21 +29,40 @@ export const Route = createFileRoute("/app/reports/$sessionId")({
 function ReportPage() {
   const { sessionId } = Route.useParams();
   const q = useQuery({ queryKey: ["report", sessionId], queryFn: () => api.report(sessionId) });
+  const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api.sessionHistory() });
   const user = useCurrentUser();
   const [downloading, setDownloading] = useState(false);
 
   async function handleDownload() {
     setDownloading(true);
     try {
-      const blob = await api.reportPdf(sessionId, user?.name);
+      let blob: Blob;
+      if (USING_MOCKS) {
+        const report = q.data ?? (await api.report(sessionId));
+        const archive = readArchive(sessionId);
+        const config =
+          sessions.data?.find((s) => s.id === sessionId)?.config ?? archive?.config;
+        blob = buildReportPdf({
+          report,
+          sessionId,
+          userName: user?.name,
+          archive,
+          scenario: config?.scenario,
+          product: config?.product,
+          persona: config?.persona,
+          mode: config?.mode,
+        });
+      } else {
+        blob = await api.reportPdf(sessionId, user?.name);
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `clario-report-${sessionId}.pdf`;
+      a.download = `clarion-coach-report-${sessionId}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
       toast.success("Report downloaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to download report");
@@ -48,6 +70,7 @@ function ReportPage() {
       setDownloading(false);
     }
   }
+
 
   if (!q.data) {
     return (
