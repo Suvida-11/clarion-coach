@@ -779,7 +779,14 @@ function composeCustomerLine(
   let candidate = "";
   for (let attempt = 0; attempt < 14; attempt += 1) {
     const core = substitute(pick(corePool));
-    const parts = [pick(hooks) + core];
+    const hook = pick(hooks);
+    // Lowercase the first word after a hook unless it's "I" or a proper noun.
+    const firstWord = core.split(" ")[0] ?? "";
+    const joined =
+      hook && firstWord.slice(1) === firstWord.slice(1).toLowerCase() && firstWord !== "I"
+        ? hook + core.charAt(0).toLowerCase() + core.slice(1)
+        : hook + core;
+    const parts = [joined];
     if (Math.random() > 0.45) parts.push(pick(fillers));
     if (Math.random() > 0.4) parts.push(pick(followups));
     candidate = parts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
