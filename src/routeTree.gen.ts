@@ -17,9 +17,11 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppReplayRouteImport } from './routes/app.replay'
 import { Route as AppNewSessionRouteImport } from './routes/app.new-session'
 import { Route as AppManualRouteImport } from './routes/app.manual'
 import { Route as AppKnowledgeRouteImport } from './routes/app.knowledge'
+import { Route as AppHistoryRouteImport } from './routes/app.history'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppReportsSessionIdRouteImport } from './routes/app.reports.$sessionId'
 import { Route as AppConsoleSessionIdRouteImport } from './routes/app.console.$sessionId'
@@ -64,6 +66,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReplayRoute = AppReplayRouteImport.update({
+  id: '/replay',
+  path: '/replay',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNewSessionRoute = AppNewSessionRouteImport.update({
   id: '/new-session',
   path: '/new-session',
@@ -77,6 +84,11 @@ const AppManualRoute = AppManualRouteImport.update({
 const AppKnowledgeRoute = AppKnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHistoryRoute = AppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
@@ -103,9 +115,11 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
+  '/app/history': typeof AppHistoryRoute
   '/app/knowledge': typeof AppKnowledgeRoute
   '/app/manual': typeof AppManualRoute
   '/app/new-session': typeof AppNewSessionRoute
+  '/app/replay': typeof AppReplayRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/console/$sessionId': typeof AppConsoleSessionIdRoute
@@ -118,9 +132,11 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
+  '/app/history': typeof AppHistoryRoute
   '/app/knowledge': typeof AppKnowledgeRoute
   '/app/manual': typeof AppManualRoute
   '/app/new-session': typeof AppNewSessionRoute
+  '/app/replay': typeof AppReplayRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/app/console/$sessionId': typeof AppConsoleSessionIdRoute
@@ -135,9 +151,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
+  '/app/history': typeof AppHistoryRoute
   '/app/knowledge': typeof AppKnowledgeRoute
   '/app/manual': typeof AppManualRoute
   '/app/new-session': typeof AppNewSessionRoute
+  '/app/replay': typeof AppReplayRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/console/$sessionId': typeof AppConsoleSessionIdRoute
@@ -153,9 +171,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/app/analytics'
+    | '/app/history'
     | '/app/knowledge'
     | '/app/manual'
     | '/app/new-session'
+    | '/app/replay'
     | '/app/settings'
     | '/app/'
     | '/app/console/$sessionId'
@@ -168,9 +188,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/app/analytics'
+    | '/app/history'
     | '/app/knowledge'
     | '/app/manual'
     | '/app/new-session'
+    | '/app/replay'
     | '/app/settings'
     | '/app'
     | '/app/console/$sessionId'
@@ -184,9 +206,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/app/analytics'
+    | '/app/history'
     | '/app/knowledge'
     | '/app/manual'
     | '/app/new-session'
+    | '/app/replay'
     | '/app/settings'
     | '/app/'
     | '/app/console/$sessionId'
@@ -260,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/replay': {
+      id: '/app/replay'
+      path: '/replay'
+      fullPath: '/app/replay'
+      preLoaderRoute: typeof AppReplayRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/new-session': {
       id: '/app/new-session'
       path: '/new-session'
@@ -279,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/app/knowledge'
       preLoaderRoute: typeof AppKnowledgeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/history': {
+      id: '/app/history'
+      path: '/history'
+      fullPath: '/app/history'
+      preLoaderRoute: typeof AppHistoryRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/analytics': {
@@ -307,9 +345,11 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppHistoryRoute: typeof AppHistoryRoute
   AppKnowledgeRoute: typeof AppKnowledgeRoute
   AppManualRoute: typeof AppManualRoute
   AppNewSessionRoute: typeof AppNewSessionRoute
+  AppReplayRoute: typeof AppReplayRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppConsoleSessionIdRoute: typeof AppConsoleSessionIdRoute
@@ -318,9 +358,11 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppHistoryRoute: AppHistoryRoute,
   AppKnowledgeRoute: AppKnowledgeRoute,
   AppManualRoute: AppManualRoute,
   AppNewSessionRoute: AppNewSessionRoute,
+  AppReplayRoute: AppReplayRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppConsoleSessionIdRoute: AppConsoleSessionIdRoute,

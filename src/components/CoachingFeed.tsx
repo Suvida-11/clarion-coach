@@ -35,10 +35,13 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   const tone = scoreTone(pct);
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium capitalize text-muted-foreground">{label}</span>
-        <span className={`font-mono font-semibold ${tone.text}`}>{Math.round(pct)}</span>
+      <div className="flex items-baseline justify-between gap-2 text-xs">
+        <span className="min-w-0 truncate font-medium capitalize leading-tight text-muted-foreground">
+          {label}
+        </span>
+        <span className={`shrink-0 font-mono font-semibold ${tone.text}`}>{Math.round(pct)}</span>
       </div>
+
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-accent/60">
         <div
           className={`h-full rounded-full ${tone.bar} transition-all duration-500`}

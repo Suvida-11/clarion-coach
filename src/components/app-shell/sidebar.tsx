@@ -8,7 +8,8 @@ import {
   PlusCircle,
   FileText,
   ClipboardPaste,
-
+  History,
+  PlayCircle,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
@@ -24,7 +25,8 @@ const nav: NavItem[] = [
   { to: "/app/new-session", label: "New Session", icon: PlusCircle },
   { to: "/app/console/sess_a91k2", label: "Live Console", icon: MessageSquareText },
   { to: "/app/manual", label: "Manual Mode", icon: ClipboardPaste },
-
+  { to: "/app/replay", label: "Replay Mode", icon: PlayCircle },
+  { to: "/app/history", label: "Past Conversations", icon: History },
   { to: "/app/knowledge", label: "Knowledge Base", icon: BookOpen },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/reports/sess_88f0x", label: "Reports", icon: FileText },

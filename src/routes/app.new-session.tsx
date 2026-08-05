@@ -13,31 +13,31 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Difficulty, Mode, Persona, SessionConfig } from "@/lib/types";
-import { Sparkles, Bot, Users, Play } from "lucide-react";
+import type { Difficulty, Persona, SessionConfig } from "@/lib/types";
+import { Sparkles, Bot } from "lucide-react";
 
 export const Route = createFileRoute("/app/new-session")({
   head: () => ({ meta: [{ title: "New Session — Clario AI" }] }),
   component: NewSession,
 });
 
-const MODES: { value: Mode; label: string; icon: typeof Bot; desc: string }[] = [
-  { value: "simulator", label: "Simulator", icon: Bot, desc: "AI generates a customer persona and drives the conversation." },
-  { value: "manual", label: "Manual", icon: Users, desc: "Paste live customer messages; we analyze in real time." },
-  { value: "replay", label: "Replay", icon: Play, desc: "Upload a past transcript and step through turn by turn." },
-];
-
 const PERSONAS: Persona[] = [
-  "Beginner",
-  "Technical User",
   "Angry",
   "Frustrated",
-  "Polite",
-  "Calm",
-  "Confused",
-  "Technical",
   "Impatient",
+  "Calm",
+  "Polite",
+  "Confused",
+  "Beginner",
+  "Technical User",
+  "Developer",
   "VIP Customer",
+  "Business Owner",
+  "Student",
+  "Senior Citizen",
+  "First-Time Buyer",
+  "Healthcare Customer",
+  "Returning Customer",
 ];
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard", "Expert"];
 const SCENARIO_PRESETS = [
@@ -49,6 +49,10 @@ const SCENARIO_PRESETS = [
   "Product Information",
   "Order Delay",
   "Technical Support",
+  "Damaged Product",
+  "Billing Issue",
+  "Order Tracking",
+  "VIP Complaint",
 ];
 
 function NewSession() {
@@ -79,34 +83,28 @@ function NewSession() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Configure a new session</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Choose your mode, persona, and scenario. Clario spins up all six agents.
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Start a live session</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Configure the AI customer — persona, issue, product and difficulty — and Clarion Coach
+          spins up the full agent pipeline for a live simulated conversation.
         </p>
       </div>
 
-      {/* Mode selector */}
-      <div className="grid gap-3 md:grid-cols-3">
-        {MODES.map((m) => {
-          const Icon = m.icon;
-          const active = config.mode === m.value;
-          return (
-            <button
-              key={m.value}
-              onClick={() => setConfig({ ...config, mode: m.value })}
-              className={`surface hover-lift rounded-xl p-4 text-left ${
-                active ? "border-primary/60 ring-glow" : ""
-              }`}
-            >
-              <div className="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-brand">
-                <Icon className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="font-semibold">{m.label}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{m.desc}</div>
-            </button>
-          );
-        })}
+      <div className="surface flex items-start gap-3 rounded-xl p-4">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand">
+          <Bot className="h-4 w-4 text-primary-foreground" />
+        </div>
+        <div className="min-w-0 text-sm">
+          <div className="font-semibold">Simulator mode</div>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            New sessions are always live simulations. Use{" "}
+            <span className="font-medium text-foreground">Manual Mode</span> to analyse pasted
+            customer messages, or <span className="font-medium text-foreground">Replay Mode</span> to
+            step through an uploaded transcript.
+          </p>
+        </div>
       </div>
+
 
       {/* Form */}
       <div className="surface space-y-5 rounded-2xl p-6">

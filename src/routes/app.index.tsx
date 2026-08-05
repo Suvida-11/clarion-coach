@@ -99,7 +99,7 @@ function Dashboard() {
             👋 Welcome back, {firstName(user?.name ?? "there")}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-base">
-            Here's how your coaching workspace is performing today.
+            Ready to coach today? Your workspace, sessions and demo analytics are below.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -144,7 +144,7 @@ function Dashboard() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h3 className="text-base font-semibold tracking-tight">Sentiment Trend</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">Last 14 days</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Demo analytics · last 14 days</p>
             </div>
             <Badge variant="secondary" className="gap-1">
               <TrendingUp className="h-3 w-3" />
@@ -189,7 +189,7 @@ function Dashboard() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h3 className="text-base font-semibold tracking-tight">Resolution Score</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">Last 14 days</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Demo analytics · last 14 days</p>
             </div>
             <span className="text-xs text-muted-foreground">14d</span>
           </div>
@@ -231,7 +231,7 @@ function Dashboard() {
               Reopen a session to review its conversation, knowledge, coaching and escalation.
             </p>
           </div>
-          <Link to="/app/analytics" className="shrink-0 text-xs font-medium text-primary hover:underline">
+          <Link to="/app/history" className="shrink-0 text-xs font-medium text-primary hover:underline">
             View all
           </Link>
         </div>

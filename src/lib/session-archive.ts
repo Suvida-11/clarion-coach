@@ -52,3 +52,33 @@ export function clearArchive(sessionId: string): void {
     /* noop */
   }
 }
+
+/** Every archived session, newest first. */
+export function listArchives(): SessionArchive[] {
+  try {
+    const out: SessionArchive[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith("clario.session.")) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as SessionArchive;
+      if (parsed?.session_id) out.push(parsed);
+    }
+    return out.sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Archive for a session, falling back to the most recent archived session that
+ * actually has messages. Prevents "No transcript captured" in reports when the
+ * report is opened for a demo/session id that was never chatted in.
+ */
+export function readArchiveOrLatest(sessionId: string): SessionArchive | null {
+  const exact = readArchive(sessionId);
+  if (exact?.messages?.length) return exact;
+  const withMessages = listArchives().find((a) => a.messages?.length);
+  return withMessages ?? exact;
+}

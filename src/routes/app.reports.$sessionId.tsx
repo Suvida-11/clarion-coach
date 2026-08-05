@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api, USING_MOCKS } from "@/lib/api";
-import { readArchive } from "@/lib/session-archive";
+import { readArchiveOrLatest } from "@/lib/session-archive";
 import { buildReportPdf } from "@/lib/report-pdf";
 
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,7 @@ function ReportPage() {
       let blob: Blob;
       if (USING_MOCKS) {
         const report = q.data ?? (await api.report(sessionId));
-        const archive = readArchive(sessionId);
+        const archive = readArchiveOrLatest(sessionId);
         const config =
           sessions.data?.find((s) => s.id === sessionId)?.config ?? archive?.config;
         blob = buildReportPdf({
