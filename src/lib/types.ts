@@ -8,7 +8,14 @@ export type Persona =
   | "Beginner"
   | "Technical User"
   | "Frustrated"
-  | "Polite";
+  | "Polite"
+  | "Student"
+  | "Business Owner"
+  | "Senior Citizen"
+  | "First-Time Buyer"
+  | "Developer"
+  | "Healthcare Customer"
+  | "Returning Customer";
 export type Mode = "simulator" | "manual" | "replay";
 export type Difficulty = "Easy" | "Medium" | "Hard" | "Expert";
 

@@ -667,6 +667,13 @@ function resolveIssue(text: string): IssueKey {
 // Per-session simulation state — keeps conversations evolving and unrepeated.
 // ---------------------------------------------------------------------------
 
+interface SessionFacts {
+  name: string;
+  order: string;
+  txn: string;
+  days: number;
+}
+
 interface SimState {
   turn: number;
   frustration: number;
@@ -675,6 +682,23 @@ interface SimState {
   usedCoaching: Set<string>;
   usedKb: Map<string, number>;
   scores: number[];
+  facts: SessionFacts;
+  /** Concrete commitments the agent made — the customer remembers these. */
+  promises: string[];
+}
+
+const FIRST_NAMES = [
+  "Priya", "Daniel", "Aisha", "Marcus", "Elena", "Tom", "Nadia", "Ravi", "Sofia", "Jonas",
+];
+
+function newFacts(): SessionFacts {
+  const rand = (n: number) => Math.floor(Math.random() * n);
+  return {
+    name: FIRST_NAMES[rand(FIRST_NAMES.length)],
+    order: `ORD-${10_000 + rand(89_999)}`,
+    txn: `TXN-${100_000 + rand(899_999)}`,
+    days: 3 + rand(11),
+  };
 }
 
 const simStates = new Map<string, SimState>();
@@ -682,7 +706,17 @@ const simStates = new Map<string, SimState>();
 function stateFor(sessionId: string): SimState {
   let s = simStates.get(sessionId);
   if (!s) {
-    s = { turn: 0, frustration: 0.7, usedCustomer: new Set(), usedCores: new Set(), usedCoaching: new Set(), usedKb: new Map(), scores: [] };
+    s = {
+      turn: 0,
+      frustration: 0.7,
+      usedCustomer: new Set(),
+      usedCores: new Set(),
+      usedCoaching: new Set(),
+      usedKb: new Map(),
+      scores: [],
+      facts: newFacts(),
+      promises: [],
+    };
     simStates.set(sessionId, s);
   }
   return s;
@@ -745,24 +779,54 @@ const CALM_FOLLOWUPS = [
   "",
 ];
 
+/** Persona-specific vocabulary and expectations. */
 const PERSONA_VOICE: Record<string, (s: string) => string> = {
   Angry: (s) => s,
   Frustrated: (s) => s,
   Impatient: (s) => s.replace(/\.$/, " — quickly, please."),
   Confused: (s) => `Sorry, I'm a bit lost here. ${s}`,
   Calm: (s) => s,
+  Polite: (s) => `Sorry to chase, but ${s.charAt(0).toLowerCase()}${s.slice(1)}`,
   Friendly: (s) => `Thanks for your help — ${s.charAt(0).toLowerCase()}${s.slice(1)}`,
   Technical: (s) => s,
+  "Technical User": (s) => `${s} I've already cleared cache and reinstalled, for the record.`,
+  Developer: (s) => `${s} If it helps, I can send you the request ID and the 4xx response body.`,
   Beginner: (s) => `I'm not very technical, sorry. ${s}`,
-  "VIP Customer": (s) => s,
+  "VIP Customer": (s) => `${s} I've been on your top-tier plan for four years, so I expected better.`,
+  "Business Owner": (s) => `${s} My team can't invoice clients while this is broken.`,
+  Student: (s) => `${s} I'm on a student budget, so I can't just absorb this.`,
+  "Senior Citizen": (s) => `${s} Please keep it simple for me — I'm not good with the online side.`,
+  "First-Time Buyer": (s) => `${s} This is my first order with you, and it's not a great start.`,
+  "Healthcare Customer": (s) => `${s} This is for a clinic, so we need it documented properly.`,
+  "Returning Customer": (s) => `${s} I've ordered from you plenty of times before without this hassle.`,
 };
 
 const pick = <T,>(pool: T[]): T => pool[Math.floor(Math.random() * pool.length)];
 
+/** Memory beats — the customer references details already established. */
+function memoryBeat(state: SimState, calming: boolean): string {
+  const f = state.facts;
+  const promise = state.promises[state.promises.length - 1];
+  const pool = calming
+    ? [
+        `Just so we're on the same page, that's order ${f.order}.`,
+        `You said "${promise ?? "you'd sort it"}" — I'm holding you to that.`,
+        `I've got ${f.txn} noted down from earlier.`,
+        `You already have my details, so nothing else to send from my side, right?`,
+      ]
+    : [
+        `It's still the same order — ${f.order} — I gave you that already.`,
+        `I've told you my name is ${f.name} and it's been ${f.days} days.`,
+        `Last time I was told "${promise ?? "someone would call me back"}" and nothing happened.`,
+        `Please don't ask me for ${f.txn} again, I've sent it twice.`,
+      ];
+  return pick(pool);
+}
+
 /**
- * Compose a customer turn from a playbook core line plus randomised hooks and
- * follow-up beats. Retries until the exact sentence has not been used in this
- * session, so replies never repeat within or across sessions.
+ * Compose a customer turn from a playbook core line plus randomised hooks,
+ * memory beats and follow-up questions. Retries until the exact sentence has not
+ * been used in this session, so replies never repeat within or across sessions.
  */
 function composeCustomerLine(
   cores: string[],
@@ -788,6 +852,8 @@ function composeCustomerLine(
         : hook + core;
     const parts = [joined];
     if (Math.random() > 0.45) parts.push(pick(fillers));
+    // From turn 2 onward the customer starts referencing what came before.
+    if (state.turn > 1 && Math.random() > 0.45) parts.push(substitute(memoryBeat(state, calming)));
     if (Math.random() > 0.4) parts.push(pick(followups));
     candidate = parts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     state.usedCores.add(core);
@@ -795,6 +861,17 @@ function composeCustomerLine(
   }
   state.usedCustomer.add(candidate);
   return candidate;
+}
+
+/** Extract concrete commitments from the agent reply so the customer can recall them. */
+function rememberPromise(state: SimState, text: string) {
+  const sentence = text
+    .split(/(?<=[.!?])\s+/)
+    .find((s) => /(i'll|i will|i've|we'll|sending|issued|refund|arrang|escalat|within|by \w+day)/i.test(s));
+  if (sentence) {
+    const trimmed = sentence.trim().replace(/\s+/g, " ").slice(0, 120);
+    if (trimmed && !state.promises.includes(trimmed)) state.promises.push(trimmed);
+  }
 }
 
 
@@ -941,6 +1018,7 @@ export function mockChatTurn(payload: {
   const knowledge = rankChunks(pb, state);
   const kbTitles = knowledge.map((c) => c.title);
   const evalResult = evaluateAgentMessage(payload.message, kbTitles);
+  if (payload.role === "agent") rememberPromise(state, payload.message);
 
   // Emotional progression: good replies calm the customer, weak replies don't.
   const quality = (evalResult.overall - 60) / 40; // 0..1
@@ -953,7 +1031,10 @@ export function mockChatTurn(payload: {
   const substitute = (t: string) =>
     t
       .replace(/\{product\}/g, product)
-      .replace(/\{days\}/g, String(3 + Math.floor(Math.random() * 9)))
+      .replace(/\{order\}/g, state.facts.order)
+      .replace(/\{txn\}/g, state.facts.txn)
+      .replace(/\{name\}/g, state.facts.name)
+      .replace(/\{days\}/g, String(state.facts.days))
       .replace(/\{nth\}/g, ["second", "third", "fourth", "fifth", "sixth"][(state.turn + Math.floor(Math.random() * 2)) % 5]);
 
   let line = composeCustomerLine(stagePool, calming, state, substitute);
