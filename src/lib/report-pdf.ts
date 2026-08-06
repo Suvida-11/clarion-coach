@@ -172,7 +172,11 @@ export function buildReportPdf(opts: BuildOptions): Blob {
       y += 4;
     }
   } else {
-    body("No transcript captured for this session.");
+    body(
+      "No live transcript was recorded for this session — it was archived before " +
+        "message capture, so the analysis below is reconstructed from the stored " +
+        "session report.",
+    );
   }
   gap();
 
@@ -220,20 +224,26 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   } else if (coaching?.suggested_response) {
     body(coaching.suggested_response);
   } else {
-    body("—");
+    body(
+      "No draft replies were captured for this session. Recommended replies are " +
+        "generated live in the console, Manual Mode and Replay Mode.",
+    );
   }
   gap();
 
   // 7. Coaching analysis
   heading("7. Coaching Analysis");
+  const coachingLines = [
+    ...(coaching?.tone_notes ?? []),
+    ...(coaching?.empathy_notes ?? []),
+    ...(coaching?.clarity_notes ?? []),
+    ...(coaching?.professional_notes ?? []),
+    coaching?.next_best_action ? `Next best action: ${coaching.next_best_action}` : undefined,
+  ].filter((v): v is string => !!v);
   bullets(
-    [
-      ...(coaching?.tone_notes ?? []),
-      ...(coaching?.empathy_notes ?? []),
-      ...(coaching?.clarity_notes ?? []),
-      ...(coaching?.professional_notes ?? []),
-      coaching?.next_best_action ? `Next best action: ${coaching.next_best_action}` : undefined,
-    ].filter((v): v is string => !!v),
+    coachingLines.length
+      ? coachingLines
+      : [...report.strengths, ...report.weaknesses, ...report.improvements],
   );
   gap();
 
