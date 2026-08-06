@@ -128,10 +128,21 @@ def simulate_customer(
     if not data or not message or message in used:
         # Fall back to plain text generation, then wrap.
         text = generate_text(
-            f"You are a {persona} customer with a {scenario} issue about {product or 'your order'}. "
-            f"Reply in 1-3 sentences to the support agent, without repeating any of these lines: "
-            f"{previous[-4:] if previous else 'none'}. Agent said: \"{agent_reply}\""
-        )
+              text = generate_text(
+                    f"You are a {persona} customer with a {scenario} issue about {product or 'your order'}.\n\n"
+    "IMPORTANT RULES:\n"
+    "- Never invent customer names.\n"
+    "- Never invent order IDs.\n"
+    "- Never invent transaction IDs.\n"
+    "- Never invent tracking numbers.\n"
+    "- Never invent policy names.\n"
+    "- Never introduce names like Tom, Jonas, Marcus, Aisha or any other person.\n"
+    "- If the conversation does not contain a customer name, do not create one.\n"
+    "- Refer only to facts already mentioned in the conversation.\n"
+    "- Reply naturally in 1–3 sentences.\n\n"
+    f"Previous customer replies:\n{previous[-4:] if previous else 'none'}\n\n"
+    f'Agent replied: "{agent_reply}"'
+)
         fb = _fallback(persona, scenario, frustration, used)
         if text and text not in used:
             fb["customer_message"] = text
