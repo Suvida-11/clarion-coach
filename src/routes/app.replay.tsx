@@ -328,7 +328,14 @@ function ReplayMode() {
                 <div ref={bottomRef} />
               </div>
             </ScrollArea>
+            <TraineeReply
+              customerMessage={
+                cursor >= 0 && messages[cursor]?.role === "customer" ? messages[cursor].content : null
+              }
+              draft={latest?.coaching?.suggested_response ?? null}
+            />
           </section>
+
 
           {/* Coaching + intent */}
           <section className="surface flex min-h-[520px] flex-col overflow-hidden rounded-2xl">
