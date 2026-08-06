@@ -180,10 +180,24 @@ def coach(
     seen = set(prev_sugg) | set(prev_tips)
 
     prompt = (
-              f"Customer Name: UNKNOWN (Do NOT invent one. Use a name only if explicitly present in the customer message or history.)\n"
-f"Order ID: UNKNOWN (Do NOT invent one. Use only if provided by the customer or conversation history.)\n"
-f"Transaction ID: UNKNOWN (Do NOT invent one.)\n"
-        f'Customer message: """{message}"""\n'
+        f"""Customer Name: UNKNOWN (Do NOT invent one. Use a name only if explicitly present in the customer message or history.)
+
+Order ID: UNKNOWN (Do NOT invent one. Use only if provided by the customer or conversation history.)
+Transaction ID: UNKNOWN (Do NOT invent one.)
+
+IMPORTANT:
+- If the customer name is UNKNOWN, NEVER mention any person's name.
+- Start the suggested_response with exactly:
+Hello,
+- Never write:
+  Hi Daniel
+  Hi Tom
+  Hi Sarah
+  Dear Customer
+
+Customer message:
+\"\"\"{message}\"\"\"
+"""
         f'Support agent reply being evaluated: """{agent_message or "(agent has not replied yet)"}"""\n'
         f"Detected intent: {analysis.intent}\n"
         f"Sentiment: {analysis.sentiment} (score={analysis.sentiment_score})\n"
