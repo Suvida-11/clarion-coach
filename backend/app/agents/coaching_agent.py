@@ -203,15 +203,15 @@ f"Transaction ID: UNKNOWN (Do NOT invent one.)\n"
 + """
 IMPORTANT RULES
 
-- Never invent customer names.
-- Never invent order IDs.
-- Never invent transaction IDs.
-- If Customer Name is UNKNOWN, NEVER address the customer by name.
-- Always begin the suggested_response with exactly:
+  - Never invent customer names.
+  - Never invent order IDs.
+  - Never invent transaction IDs.
+  - If Customer Name is UNKNOWN, NEVER address the customer by name.
+  - Always begin the suggested_response with exactly:
 
-Hello,
+    Hello,
 
-- Do not write:
+  - Do not write:
   • Hi Tom,
   • Hi Jonas,
   • Hi Aisha,
@@ -296,12 +296,10 @@ Hello,
             flags=re.IGNORECASE,
 )
 
-sr = re.sub(r"\bORD-\d+\b", "your order", sr)
-sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
+    sr = re.sub(r"\bORD-\d+\b", "your order", sr)
+    sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
 
-data["suggested_response"] = sr
-
-data["suggested_response"] = sr
+    data["suggested_response"] = sr
         if not sr or sr in prev_sugg:
             data["suggested_response"] = _fallback(
                 message, analysis, seen, agent_message, kb
