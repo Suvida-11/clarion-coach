@@ -23,10 +23,13 @@ type NavItem = {
 const nav: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/new-session", label: "New Session", icon: PlusCircle },
-  { to: "/app/console/sess_a91k2", label: "Live Console", icon: MessageSquareText },
   { to: "/app/manual", label: "Manual Mode", icon: ClipboardPaste },
   { to: "/app/replay", label: "Replay Mode", icon: PlayCircle },
   { to: "/app/history", label: "Past Conversations", icon: History },
+];
+
+const workspaceNav: NavItem[] = [
+  { to: "/app/console/sess_a91k2", label: "Live Console", icon: MessageSquareText },
   { to: "/app/knowledge", label: "Knowledge Base", icon: BookOpen },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/reports/sess_88f0x", label: "Reports", icon: FileText },
@@ -43,15 +46,21 @@ export function Sidebar() {
           <Logo />
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-6">
-        {nav.map((item) => {
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-6">
+        {[...nav, ...workspaceNav].map((item) => {
           const Icon = item.icon;
           const active = item.exact
             ? pathname === item.to
             : pathname.startsWith(item.to.split("/").slice(0, 3).join("/"));
+          const firstWorkspace = item === workspaceNav[0];
           return (
+            <div key={item.to}>
+              {firstWorkspace && (
+                <div className="px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                  Workspace
+                </div>
+              )}
             <Link
-              key={item.to}
               to={item.to}
               className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 active
@@ -63,6 +72,7 @@ export function Sidebar() {
               <span className="truncate">{item.label}</span>
               {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
             </Link>
+            </div>
           );
         })}
       </nav>

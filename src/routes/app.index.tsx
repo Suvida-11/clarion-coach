@@ -251,7 +251,9 @@ function Dashboard() {
                 <MessageSquare className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{s.config.scenario}</div>
+                <div className="truncate text-sm font-semibold" title={s.config.scenario}>
+                  {s.config.scenario}
+                </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
                     {s.config.persona}
@@ -296,6 +298,7 @@ function Dashboard() {
 
 import type { Session } from "@/lib/types";
 import { useQuery as _useQuery } from "@tanstack/react-query";
+import { useLiveSnapshot } from "@/lib/live-state";
 
 function LiveSessionCards({
   session,
@@ -310,7 +313,17 @@ function LiveSessionCards({
 
   // Attempt to derive from the most recent chat by calling /chat with empty? No — we don't have a "latest turn" API.
   // We surface the info we can from the session record and show placeholders when no live analysis is present.
-  const emotion = "neutral" as const;
+  const snap = useLiveSnapshot();
+  const live = snap && (!sessionId || snap.session_id === sessionId) ? snap : null;
+  const emotion = live
+    ? live.frustration > 0.7
+      ? ("angry" as const)
+      : live.frustration > 0.45
+        ? ("frustrated" as const)
+        : live.sentiment.includes("positive")
+          ? ("happy" as const)
+          : ("neutral" as const)
+    : ("neutral" as const);
 
   if (isLoading) {
     return (
@@ -346,8 +359,11 @@ function LiveSessionCards({
     );
   }
 
-  const perfScore = session.resolution_score ?? Math.round(60 + Math.random() * 30);
-  const kbCount = Math.max(1, Math.min(3, Math.round((session.turn_count || 0) / 2) + 1));
+  const perfScore = live
+    ? Math.round(live.coaching_score)
+    : (session.resolution_score ?? Math.round(60 + Math.random() * 30));
+  const kbCount =
+    live?.knowledge_count ?? Math.max(1, Math.min(3, Math.round((session.turn_count || 0) / 2) + 1));
 
   const cards: {
     icon: typeof Radio;
@@ -378,22 +394,37 @@ function LiveSessionCards({
     {
       icon: Brain,
       label: "Intent",
-      value: <span className="truncate text-sm font-semibold">{session.config.scenario}</span>,
+      value: (
+        <span
+          className="block truncate text-sm font-semibold"
+          title={live?.intent || session.config.scenario}
+        >
+          {live?.intent || session.config.scenario}
+        </span>
+      ),
       accent: "text-primary",
     },
     {
       icon: Activity,
       label: "Sentiment",
-      value: <span className="text-sm font-semibold capitalize">neutral</span>,
+      value: (
+        <span className="block truncate text-sm font-semibold capitalize" title={live?.sentiment ?? "neutral"}>
+          {(live?.sentiment ?? "neutral").replace("_", " ")}
+        </span>
+      ),
       accent: "text-chart-2",
-      hint: "live",
+      hint: live ? `${Math.round((live.sentiment_score + 1) * 50)}%` : "live",
     },
     {
       icon: AlertTriangle,
       label: "Escalation risk",
-      value: <span className="text-sm font-semibold">Low</span>,
+      value: (
+        <span className="block truncate text-sm font-semibold capitalize">
+          {live?.risk_level ?? "low"}
+        </span>
+      ),
       accent: "text-warning",
-      hint: "monitoring",
+      hint: live ? `${Math.round(live.risk_probability * 100)}%` : "monitoring",
     },
     {
       icon: BookOpen,
