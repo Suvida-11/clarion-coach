@@ -289,6 +289,23 @@ IMPORTANT RULES
         data["score_reasoning"] = reasoning
 
         sr = (data.get("suggested_response") or "").strip()
+        import re
+
+        # Remove greetings that contain a name
+        sr = re.sub(
+              r"^(Hi|Hello|Thanks|Thank you|Dear)\s+[A-Z][a-z]+,?\s*",
+              "Hello,\n\n",
+              sr,
+              flags=re.IGNORECASE,
+)
+
+# Remove invented order IDs
+sr = re.sub(r"\bORD-\d+\b", "your order", sr)
+
+# Remove invented transaction IDs
+sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
+
+data["suggested_response"] = sr
 
         sr = re.sub(
             r"^(Hi|Hello|Thanks|Thank you|I appreciate your patience),?\s+[A-Z][a-z]+,?",
