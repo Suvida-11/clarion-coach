@@ -48,7 +48,7 @@ export function CoachingPanel({ coaching, risk, onUseSuggestion }: Props) {
       {/* Suggested response */}
       <div>
         <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
-          <Sparkles className="h-3 w-3 text-primary" /> Suggested response
+          <Sparkles className="h-3 w-3 text-primary" /> AI Draft Response
         </h4>
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm leading-relaxed">
           {coaching.suggested_response}
@@ -60,7 +60,7 @@ export function CoachingPanel({ coaching, risk, onUseSuggestion }: Props) {
             className="mt-2 h-7 w-full text-xs"
             onClick={() => onUseSuggestion(coaching.suggested_response)}
           >
-            Use this response
+            Use this reply
           </Button>
         )}
       </div>
