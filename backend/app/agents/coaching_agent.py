@@ -186,55 +186,31 @@ Order ID: UNKNOWN (Do NOT invent one. Use only if provided by the customer or co
 Transaction ID: UNKNOWN (Do NOT invent one.)
 
 IMPORTANT:
-- If the customer name is UNKNOWN, NEVER mention any person's name.
-- Start the suggested_response with exactly:
-Hello,
+
+- The suggested_response must NEVER contain any customer name.
+- Never greet the customer.
+- Begin immediately with the solution.
 - Never write:
-  Hi Daniel
-  Hi Tom
-  Hi Sarah
-  Dear Customer
-
-Customer message:
-\"\"\"{message}\"\"\"
-"""
-        f'Support agent reply being evaluated: """{agent_message or "(agent has not replied yet)"}"""\n'
-        f"Detected intent: {analysis.intent}\n"
-        f"Sentiment: {analysis.sentiment} (score={analysis.sentiment_score})\n"
-        f"Frustration: {analysis.frustration}, Urgency: {analysis.urgency}\n"
-        f"Retrieved knowledge titles: {', '.join(kb) if kb else '(none)'}\n"
-        f"Retrieved knowledge content:\n"
-        + ("\n".join(f"- {p}" for p in kb_prev[:3]) if kb_prev else "(none)")
-        + f"\n\nConversation history so far:\n{hist_txt or '(none)'}\n\n"
-        "Score every dimension between 60 and 100 for a genuine reply; never return 0 "
-        "unless the reply is empty. Tailor all advice to this specific issue "
-        f"({analysis.intent}) and explain WHY each improvement matters, citing the "
-        "retrieved knowledge where relevant.\n\n"
-        f"Previous suggested responses (DO NOT repeat wording):\n"
-        + ("\n".join(f"- {s}" for s in prev_sugg) if prev_sugg else "(none)")
-        + "\n\nPrevious coaching tips already shown (rotate to fresh angles):\n"
-        + ("\n".join(f"- {t}" for t in prev_tips) if prev_tips else "(none)")
-        + """
-          
-IMPORTANT RULES
-
-  - Never invent customer names.
-  - Never invent order IDs.
-  - Never invent transaction IDs.
-  - If Customer Name is UNKNOWN, NEVER address the customer by name.
-  - Always begin the suggested_response with exactly:
-
-    Hello,
-
-  - Do not write:
-  - Hi Tom
-  - Hi Jonas
-  - Hi Aisha
+  - Hi John
+  - Hello Sarah
   - Thanks Marcus
-
+  - I appreciate your patience, Daniel
+- Never invent order IDs.
+- Never invent transaction IDs.
+- Never invent policy names.
+- Even if a customer name exists in the conversation, do NOT mention it.
+- Start directly with the resolution.
 - Use only names, IDs or dates that appear in the conversation or retrieved knowledge.
 """
-)
+
+        + f'Customer message: """{message}"""\n'
+        + f'Support agent reply: """{agent_message or "(none)"}"""\n'
+        + f"Detected intent: {analysis.intent}\n"
+        + f"Sentiment: {analysis.sentiment} (score={analysis.sentiment_score})\n"
+        + f"Frustration: {analysis.frustration}, Urgency: {analysis.urgency}\n"
+        + f"Retrieved knowledge: {', '.join(kb) if kb else '(none)'}\n"
+        + f"\nConversation history:\n{hist_txt or '(none)'}\n"
+    )
 
     data = generate_json(prompt, system=SYSTEM)
     if not data:
@@ -305,12 +281,12 @@ IMPORTANT RULES
         sr = (data.get("suggested_response") or "").strip()
     
 
-        sr = re.sub(
-            r"^(Hi|Hello|Thanks|Thank you|I appreciate your patience),?\s+[A-Z][a-z]+,?",
-            "Hello,",
-            sr,
-            flags=re.IGNORECASE,
+        sr = re.sub(r"^(Hi|Hello|Hey|Dear|Thanks.*?,|Thank you.*?,|I appreciate.*?,)\s*[A-Z][a-z]+\s*[—,-]?\s*",
+    "",
+    sr,
+    flags=re.IGNORECASE,
 )
+
 
         sr = re.sub(r"\bORD-\d+\b", "your order", sr)
         sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
