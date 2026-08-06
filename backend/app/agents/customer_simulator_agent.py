@@ -128,8 +128,7 @@ def simulate_customer(
     if not data or not message or message in used:
         # Fall back to plain text generation, then wrap.
         text = generate_text(
-              text = generate_text(
-                    f"You are a {persona} customer with a {scenario} issue about {product or 'your order'}.\n\n"
+              f"You are a {persona} customer with a {scenario} issue about {product or 'your order'}.\n\n"
     "IMPORTANT RULES:\n"
     "- Never invent customer names.\n"
     "- Never invent order IDs.\n"
