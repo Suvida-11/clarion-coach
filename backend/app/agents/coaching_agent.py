@@ -201,6 +201,7 @@ f"Transaction ID: UNKNOWN (Do NOT invent one.)\n"
         + "\n\nPrevious coaching tips already shown (rotate to fresh angles):\n"
         + ("\n".join(f"- {t}" for t in prev_tips) if prev_tips else "(none)")
         + """
+          
 IMPORTANT RULES
 
   - Never invent customer names.
