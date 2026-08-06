@@ -389,7 +389,7 @@ function Console() {
               >
                 <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <span className="wrap-anywhere line-clamp-2 flex-1 leading-relaxed">
-                  <span className="font-semibold text-primary">Use suggestion: </span>
+                  <span className="font-semibold text-primary">Use AI draft: </span>
                   {coaching.suggested_response}
                 </span>
               </button>
