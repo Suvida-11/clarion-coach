@@ -123,6 +123,14 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   };
 
   const turns = archive?.turns ?? [];
+  // Fall back to reconstructing the transcript from the analysed turns so the
+  // report never prints "No transcript captured" when turns exist.
+  const messages =
+    archive?.messages?.length
+      ? archive.messages
+      : turns.flatMap((t) =>
+          [t.turn, t.simulated_customer_reply].filter((m): m is NonNullable<typeof m> => !!m),
+        );
   const last: ChatTurnResponse | undefined = turns[turns.length - 1];
   const coaching = last?.coaching;
   const scores = coaching?.scores;
@@ -152,8 +160,8 @@ export function buildReportPdf(opts: BuildOptions): Blob {
 
   // 2. Conversation transcript
   heading("2. Conversation Transcript");
-  if (archive?.messages.length) {
-    for (const m of archive.messages) {
+  if (messages.length) {
+    for (const m of messages) {
       ensure(20);
       const stamp = new Date(m.timestamp).toLocaleTimeString();
       doc.setFont("helvetica", "bold").setFontSize(9);
@@ -197,11 +205,29 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   );
   gap();
 
-  // 6. Coaching suggestions
-  heading("6. Coaching Suggestions");
+  // 6. AI draft responses (customer-facing replies)
+  heading("6. AI Draft Responses (Recommended Replies)");
+  if (turns.length) {
+    turns.forEach((t, i) => {
+      if (!t.coaching?.suggested_response) return;
+      ensure(20);
+      doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...BRAND);
+      doc.text(`Turn ${i + 1} · ${new Date(t.turn.timestamp).toLocaleTimeString()}`, MARGIN, y);
+      y += 13;
+      body(t.coaching.suggested_response, 12);
+      y += 6;
+    });
+  } else if (coaching?.suggested_response) {
+    body(coaching.suggested_response);
+  } else {
+    body("—");
+  }
+  gap();
+
+  // 7. Coaching analysis
+  heading("7. Coaching Analysis");
   bullets(
     [
-      coaching?.suggested_response,
       ...(coaching?.tone_notes ?? []),
       ...(coaching?.empathy_notes ?? []),
       ...(coaching?.clarity_notes ?? []),
@@ -212,7 +238,7 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   gap();
 
   // 7. Coaching score + category scores
-  heading("7. Coaching Score & Category Breakdown");
+  heading("8. Coaching Score & Category Breakdown");
   rows([["Overall score", `${coaching?.coaching_score ?? avgScore} / 100`]]);
   if (scores) {
     const cats: [string, number | undefined][] = [
@@ -249,7 +275,7 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   gap();
 
   // 8. Escalation risk
-  heading("8. Escalation Risk");
+  heading("9. Escalation Risk");
   rows([
     ["Risk level", (risk?.level ?? "low").toUpperCase()],
     ["Probability", risk ? `${Math.round(risk.probability * 100)}%` : "—"],
@@ -266,12 +292,12 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   }
 
   // 9. Resolution summary
-  heading("9. Resolution Summary");
+  heading("10. Resolution Summary");
   body(report.summary);
   gap();
 
   // 10. Performance summary
-  heading("10. Performance Summary");
+  heading("11. Performance Summary");
   body("Strengths");
   bullets(report.strengths);
   gap();
@@ -280,12 +306,12 @@ export function buildReportPdf(opts: BuildOptions): Blob {
   gap();
 
   // 11. Communication tips
-  heading("11. Communication Tips");
+  heading("12. Communication Tips");
   bullets(report.improvements);
   gap();
 
   // 12. Professional recommendations
-  heading("12. Professional Recommendations");
+  heading("13. Professional Recommendations");
   bullets(report.recommendations);
 
   footer();
