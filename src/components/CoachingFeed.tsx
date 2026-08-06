@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { CoachingSuggestion, EscalationRisk } from "@/lib/types";
 import { CollapsibleCard, NoteList } from "@/components/panels/collapsible-card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import {
   ArrowRight,
   Wrench,
   ShieldAlert,
+  ClipboardCopy,
+  Check,
 } from "lucide-react";
 
 interface Props {
@@ -57,6 +60,14 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
  * Gemini responses always wrap and stay readable.
  */
 export function CoachingFeed({ coaching, risk, onUseSuggestion }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const id = setTimeout(() => setCopied(false), 1800);
+    return () => clearTimeout(id);
+  }, [copied]);
+
   if (!coaching) {
     return (
       <div className="grid place-items-center rounded-2xl border border-dashed border-border px-6 py-16 text-center">
@@ -149,7 +160,7 @@ export function CoachingFeed({ coaching, risk, onUseSuggestion }: Props) {
                 .catch(() => setCopied(false));
             }}
           >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
+            {copied ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
             {copied ? "Copied" : "Copy"}
           </Button>
         </div>
