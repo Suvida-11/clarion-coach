@@ -200,20 +200,23 @@ f"Transaction ID: UNKNOWN (Do NOT invent one.)\n"
         + ("\n".join(f"- {s}" for s in prev_sugg) if prev_sugg else "(none)")
         + "\n\nPrevious coaching tips already shown (rotate to fresh angles):\n"
         + ("\n".join(f"- {t}" for t in prev_tips) if prev_tips else "(none)")
-          + ("\n".join(f"- {t}" for t in prev_tips) if prev_tips else "(none)")
 + """
 
 IMPORTANT RULES
-
 - Never invent a customer's name.
 - Never invent order IDs or transaction IDs.
-- If Customer Name is UNKNOWN, begin with "Hello," or "Hi,".
-- Use a customer's name ONLY if it appears in the customer message or conversation history.
-- Use an order ID ONLY if it appears in the customer message or conversation history.
-- The suggested_response must be ready to copy and send directly.
+- If Customer Name is UNKNOWN, begin with "Hello,".
+- Never greet the customer using a personal name.
+- Never generate greetings like:
+  - Hi Aisha
+  - Hello Tom
+  - Thanks Jonas
+- Start every suggested_response with:
+  Hello,
+          
 """
 )
-    )
+
     data = generate_json(prompt, system=SYSTEM)
     if not data:
         return _fallback(message, analysis, seen, agent_message, kb)
@@ -271,23 +274,7 @@ IMPORTANT RULES
         data["coaching_score"] = round(_clamp(overall, _SCORE_FLOOR, 100.0), 1)
 
         reasoning = (data.get("score_reasoning") or "").strip()
-              import re
-
-# Remove hallucinated customer names
-sr = re.sub(
-    r"^(Hi|Hello|Thanks|Thank you|I appreciate your patience),?\s+[A-Z][a-z]+,?",
-    "Hello,",
-    sr,
-)
-
-# Remove hallucinated order IDs
-sr = re.sub(
-    r"ORD-\d+",
-    "your order",
-    sr,
-)
-
-data["suggested_response"] = sr
+              
         if not reasoning:
             reasoning = (
                 f"Scored {data['coaching_score']}/100 across tone, clarity, grammar, "
@@ -297,6 +284,17 @@ data["suggested_response"] = sr
         data["score_reasoning"] = reasoning
 
         sr = (data.get("suggested_response") or "").strip()
+        sr = re.sub(
+    r"^(Hi|Hello|Thanks|Thank you|I appreciate your patience),?\s+[A-Z][a-z]+,?",
+    "Hello,",
+    sr,
+    flags=re.IGNORECASE,
+)
+
+sr = re.sub(r"\bORD-\d+\b", "your order", sr)
+sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
+
+data["suggested_response"] = sr
         if not sr or sr in prev_sugg:
             data["suggested_response"] = _fallback(
                 message, analysis, seen, agent_message, kb
