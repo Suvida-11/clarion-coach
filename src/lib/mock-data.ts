@@ -1154,7 +1154,7 @@ export function mockChatTurn(payload: {
 
   const frustration = Number(state.frustration.toFixed(2));
   const sentimentScore = Number((0.85 - frustration * 1.7).toFixed(2));
-  const coaching = buildCoaching(pb, state, evalResult, kbTitles);
+  const coaching = buildCoaching(pb, issue, state, evalResult, kbTitles, substitute);
 
   const probability = Number(Math.max(0.05, Math.min(0.96, frustration * 0.95 * difficultyWeight)).toFixed(2));
   const level: "low" | "medium" | "high" | "critical" =
