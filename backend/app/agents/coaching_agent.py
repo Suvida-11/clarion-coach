@@ -201,19 +201,23 @@ f"Transaction ID: UNKNOWN (Do NOT invent one.)\n"
         + "\n\nPrevious coaching tips already shown (rotate to fresh angles):\n"
         + ("\n".join(f"- {t}" for t in prev_tips) if prev_tips else "(none)")
 + """
-
 IMPORTANT RULES
-- Never invent a customer's name.
-- Never invent order IDs or transaction IDs.
-- If Customer Name is UNKNOWN, begin with "Hello,".
-- Never greet the customer using a personal name.
-- Never generate greetings like:
-  - Hi Aisha
-  - Hello Tom
-  - Thanks Jonas
-- Start every suggested_response with:
-  Hello,
-          
+
+- Never invent customer names.
+- Never invent order IDs.
+- Never invent transaction IDs.
+- If Customer Name is UNKNOWN, NEVER address the customer by name.
+- Always begin the suggested_response with exactly:
+
+Hello,
+
+- Do not write:
+  • Hi Tom,
+  • Hi Jonas,
+  • Hi Aisha,
+  • Thanks Marcus,
+
+- Use only names, IDs or dates that appear in the conversation or retrieved knowledge.
 """
 )
 
@@ -284,15 +288,18 @@ IMPORTANT RULES
         data["score_reasoning"] = reasoning
 
         sr = (data.get("suggested_response") or "").strip()
+
         sr = re.sub(
-    r"^(Hi|Hello|Thanks|Thank you|I appreciate your patience),?\s+[A-Z][a-z]+,?",
-    "Hello,",
-    sr,
-    flags=re.IGNORECASE,
+            r"^(Hi|Hello|Thanks|Thank you|I appreciate your patience),?\s+[A-Z][a-z]+,?",
+            "Hello,",
+            sr,
+            flags=re.IGNORECASE,
 )
 
 sr = re.sub(r"\bORD-\d+\b", "your order", sr)
 sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
+
+data["suggested_response"] = sr
 
 data["suggested_response"] = sr
         if not sr or sr in prev_sugg:
