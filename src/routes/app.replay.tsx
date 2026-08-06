@@ -5,6 +5,7 @@ import type { ReplayMessage, ReplayTranscript, ReplayTurn } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Play,
@@ -23,6 +24,7 @@ import {
   Loader2,
   User,
   Bot,
+  PenLine,
 } from "lucide-react";
 import { CoachingFeed } from "@/components/CoachingFeed";
 import { KnowledgePanel } from "@/components/KnowledgePanel";
@@ -457,6 +459,138 @@ function Bubble({ m, active, dim }: { m: ReplayMessage; active: boolean; dim: bo
         </div>
         <p className="wrap-anywhere whitespace-pre-wrap">{m.content}</p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Coaching replay drill — the trainee writes their own reply to the current
+ * customer message, then compares it against the AI Draft Response and gets
+ * scored feedback on empathy, specificity, commitment and length.
+ */
+function TraineeReply({
+  customerMessage,
+  draft,
+}: {
+  customerMessage: string | null;
+  draft: string | null;
+}) {
+  const [value, setValue] = useState("");
+  const [submitted, setSubmitted] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValue("");
+    setSubmitted(null);
+  }, [customerMessage]);
+
+  const feedback = useMemo(() => {
+    if (!submitted) return null;
+    const text = submitted.toLowerCase();
+    const words = submitted.trim().split(/\s+/).filter(Boolean).length;
+    const checks = [
+      {
+        label: "Acknowledges the customer",
+        pass: /sorry|understand|apolog|appreciate|frustrat|thank/.test(text),
+        tip: "Open by naming how the customer feels before moving to the fix.",
+      },
+      {
+        label: "Gives something concrete",
+        pass: /\d/.test(text) || /today|tomorrow|within|reference|hour/.test(text),
+        tip: "Add a date, amount or reference number so the promise is verifiable.",
+      },
+      {
+        label: "Commits to an action",
+        pass: /i'?ll|i have|i've|i am|let me|raised|issued|arranged|sending/.test(text),
+        tip: "Say what you are doing, in first person, rather than what 'will be done'.",
+      },
+      {
+        label: "Right length for the issue",
+        pass: words >= 18 && words <= 90,
+        tip: "Aim for roughly 25–70 words: enough to reassure, short enough to read.",
+      },
+      {
+        label: "Closes the loop",
+        pass: /follow up|confirm|email|update you|reply here|get back/.test(text),
+        tip: "End with how and when the customer will hear from you next.",
+      },
+    ];
+    const passed = checks.filter((c) => c.pass).length;
+    const score = Math.round(45 + (passed / checks.length) * 55);
+    return { checks, score, words };
+  }, [submitted]);
+
+  if (!customerMessage) {
+    return (
+      <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground">
+        Step to a customer message to practise your own reply and compare it with the AI draft.
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border p-5">
+      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <PenLine className="h-3.5 w-3.5 text-primary" />
+        Your reply
+      </div>
+      <Textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Write how you would answer this customer…"
+        className="min-h-[92px] resize-none text-sm"
+      />
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={!value.trim()}
+          onClick={() => setSubmitted(value.trim())}
+          className="bg-brand text-primary-foreground hover:opacity-90"
+        >
+          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+          Compare with AI draft
+        </Button>
+        {submitted && (
+          <Button size="sm" variant="outline" onClick={() => setSubmitted(null)}>
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Try again
+          </Button>
+        )}
+      </div>
+
+      {feedback && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between rounded-xl bg-accent/40 px-4 py-3">
+            <span className="text-xs font-medium text-muted-foreground">Your reply score</span>
+            <span className="text-lg font-bold tracking-tight">{feedback.score}/100</span>
+          </div>
+          <ul className="space-y-2">
+            {feedback.checks.map((c) => (
+              <li key={c.label} className="flex gap-2 text-xs leading-relaxed">
+                <span
+                  className={cn(
+                    "mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full",
+                    c.pass ? "bg-success" : "bg-warning",
+                  )}
+                />
+                <span className="min-w-0">
+                  <span className="font-medium">{c.label}</span>
+                  {!c.pass && <span className="text-muted-foreground"> — {c.tip}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {draft && (
+            <div className="rounded-xl border border-primary/25 bg-primary/[0.04] p-4">
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                AI Draft Response
+              </div>
+              <p className="wrap-anywhere whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                {draft}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
