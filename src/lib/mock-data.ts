@@ -952,22 +952,120 @@ function rankChunks(pb: Playbook, state: SimState): RetrievedChunk[] {
     });
 }
 
+// ---------------------------------------------------------------------------
+// AI Draft Response — a real, sendable customer-facing reply (never coaching
+// instructions). Composed from an acknowledgement, an issue-specific action
+// with a concrete commitment, and a closing line.
+// ---------------------------------------------------------------------------
+
+const DRAFT_OPENERS = [
+  "Hi {name}, thanks for staying with me on this — I can see exactly what's gone wrong.",
+  "Hi {name}, I'm sorry you've had to chase this for {days} days. Let me put it right.",
+  "Thanks for the details, {name} — I've pulled up {order} and I can see the problem.",
+  "Hi {name}, you're right to be frustrated, and I'd feel the same in your position.",
+  "I appreciate your patience, {name}. I've checked {order} and I don't want to leave you waiting again.",
+];
+
+const DRAFT_CLOSERS = [
+  "You'll get a confirmation email with the reference within the next hour, and I'll stay on this until it's closed.",
+  "I'll follow up personally tomorrow morning so you don't have to chase us again.",
+  "If anything looks different on your side, just reply here and it comes straight back to me.",
+  "I've added a note to your account so any colleague picking this up has the full history.",
+  "You'll have written confirmation of all of this so you've got a record.",
+];
+
+const DRAFT_BODIES: Record<IssueKey, string[]> = {
+  refund: [
+    "I've approved the full refund on {order} now — it leaves us today and lands back on your original card within 3–5 working days.",
+    "Rather than wait for the returns team, I've issued the refund for {order} directly and waived the return postage.",
+    "The refund on {order} was stuck at an approval step; I've cleared it myself and it's processing as we speak.",
+  ],
+  payment: [
+    "I can see two authorisations against {txn} — the duplicate has been voided and the held amount is released back to you within 48 hours.",
+    "The second charge on {txn} never settled, so I've cancelled it at our end and requested an immediate release from the bank.",
+    "I've refunded the duplicate payment on {txn} today and flagged the card record so it can't happen again on your next order.",
+  ],
+  tracking: [
+    "Tracking for {order} stalled at the sorting hub — I've asked the carrier for a live scan and booked a redelivery for tomorrow.",
+    "I can see {order} hasn't moved for {days} days, so I've raised a replacement shipped overnight rather than waiting on the search.",
+    "Your parcel {order} is at the local depot; I've upgraded it to next-day and you'll get a new tracking link tonight.",
+  ],
+  delivery: [
+    "I've escalated {order} to overnight delivery at no cost, so it reaches you before your deadline.",
+    "The delay on {order} is on us — it ships today on a priority service and I've added a credit to your account.",
+    "I've moved {order} to our fastest service and confirmed the courier collection for this afternoon.",
+  ],
+  account: [
+    "I've unlocked your account and cleared the failed attempts — you can sign in straight away with your existing password.",
+    "Your account was locked by our security rules after repeated attempts; I've released it and sent a fresh secure link to your email.",
+    "I've reset the lock on your account and extended the session timeout so this doesn't repeat.",
+  ],
+  password: [
+    "I've sent a new reset link that's valid for 30 minutes — open it on the same device and it will take you straight to a new password.",
+    "The old reset email had expired. A new one is on its way now; if it isn't there in two minutes, check the promotions folder and tell me.",
+    "I've cleared the stuck reset request and triggered a fresh one, so the link you get next will work first time.",
+  ],
+  subscription: [
+    "Your subscription is cancelled from today, and I've refunded the charge taken on {txn} since you cancelled before using the period.",
+    "I've cancelled the renewal and confirmed nothing further will be taken; your access runs until the end of the paid period.",
+    "The cancellation is now on your account, and I've stopped the upcoming payment so you won't see another charge.",
+  ],
+  damaged: [
+    "That's not the condition {product} should arrive in — a replacement is dispatched today and there's no need to return the damaged one.",
+    "I've raised a free replacement for {order} on next-day delivery and logged the damage with our packing team.",
+    "I've arranged a like-for-like replacement of {product} plus a prepaid label if you'd rather have the refund instead.",
+  ],
+  technical: [
+    "As an immediate workaround, sign out and back in once — that clears the cached token. I've also raised the underlying bug with engineering under {order}.",
+    "This is a known issue in the current build; updating to the latest version fixes it, and I'll confirm here once the permanent patch ships.",
+    "I've reproduced the error on my side, so it isn't your setup. Engineering has it now and I'll update you within 24 hours.",
+  ],
+  billing: [
+    "I've corrected the invoice on {txn} and the difference is credited back to you today — a revised invoice is on its way.",
+    "The extra amount on {txn} was a tax rate applied in error; it's refunded and I've fixed the rate on your account.",
+    "I've reissued the invoice with the right figures and adjusted your next bill so nothing carries over.",
+  ],
+  shipping: [
+    "You shouldn't have been charged express shipping for a standard delivery — I've refunded that charge on {order} today.",
+    "I've refunded the shipping cost on {order} and switched your account to free delivery on the next order.",
+    "The shipping fee on {order} is being returned to your card, and I've corrected the option that caused it.",
+  ],
+  vip: [
+    "As a priority account this should never have taken {days} days — I've assigned a named contact and pushed {order} to the front of the queue.",
+    "I've escalated {order} to our senior team and applied a goodwill credit to your account for the disruption.",
+    "I'm handling {order} personally from here, with a direct line to the fulfilment lead so nothing stalls again.",
+  ],
+  complaint: [
+    "You've had to repeat yourself and that's a failure on our side — I've taken ownership of {order} and logged a formal complaint reference for you.",
+    "I've raised this with the team lead, and you'll hear from us with an outcome rather than another holding message.",
+    "I've documented everything that's happened with {order} so you don't have to explain it again to anyone else.",
+  ],
+};
+
+function buildDraftReply(
+  issue: IssueKey,
+  state: SimState,
+  substitute: (t: string) => string,
+  kbTitles: string[],
+): string {
+  const opener = pickFresh(DRAFT_OPENERS, state.usedCoaching);
+  const action = pickFresh(DRAFT_BODIES[issue], state.usedCoaching);
+  const closer = pickFresh(DRAFT_CLOSERS, state.usedCoaching);
+  const grounded = kbTitles[0]
+    ? ` This follows our "${kbTitles[0]}" policy, so it's already approved.`
+    : "";
+  return substitute(`${opener}\n\n${action}${grounded}\n\n${closer}`);
+}
+
 function buildCoaching(
   pb: Playbook,
+  issue: IssueKey,
   state: SimState,
   evalResult: ReturnType<typeof evaluateAgentMessage>,
   kbTitles: string[],
+  substitute: (t: string) => string,
 ): CoachingSuggestion {
   const stage = state.turn <= 1 ? 0 : state.turn <= 3 ? 1 : 2;
-  const suggestion = pickFresh(
-    [
-      `${pb.coaching[stage % pb.coaching.length]}`,
-      ...pb.nextActions,
-    ],
-    state.usedCoaching,
-  );
-
-  const suggested_response = pickFresh(pb.nextActions, state.usedCoaching);
   const reasonBits: string[] = [];
   if (evalResult.empathyHits === 0) reasonBits.push("no explicit acknowledgement of how the customer feels");
   if (!evalResult.specificity) reasonBits.push("no concrete date, amount or reference number");
@@ -976,8 +1074,11 @@ function buildCoaching(
   if (!reasonBits.length) reasonBits.push("the reply was empathetic, specific and grounded in the retrieved policy");
 
   return {
-    suggested_response: `${suggestion} For example: "${suggested_response}"`,
-    tone_notes: [pb.coaching[(stage + 1) % pb.coaching.length]],
+    suggested_response: buildDraftReply(issue, state, substitute, kbTitles),
+    tone_notes: [
+      pb.coaching[stage % pb.coaching.length],
+      pb.coaching[(stage + 1) % pb.coaching.length],
+    ],
     clarity_notes: [pickFresh(pb.clarity, state.usedCoaching)],
     grammar_notes: [
       evalResult.scores.grammar >= 90
@@ -995,6 +1096,7 @@ function buildCoaching(
     escalation_recommendation: pb.escalation,
   };
 }
+
 
 export function mockChatTurn(payload: {
   session_id: string;
