@@ -200,7 +200,7 @@ f"Transaction ID: UNKNOWN (Do NOT invent one.)\n"
         + ("\n".join(f"- {s}" for s in prev_sugg) if prev_sugg else "(none)")
         + "\n\nPrevious coaching tips already shown (rotate to fresh angles):\n"
         + ("\n".join(f"- {t}" for t in prev_tips) if prev_tips else "(none)")
-+ """
+        + """
 IMPORTANT RULES
 
   - Never invent customer names.
@@ -296,10 +296,10 @@ IMPORTANT RULES
             flags=re.IGNORECASE,
 )
 
-    sr = re.sub(r"\bORD-\d+\b", "your order", sr)
-    sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
+        sr = re.sub(r"\bORD-\d+\b", "your order", sr)
+        sr = re.sub(r"\bTXN-\d+\b", "your transaction", sr)
 
-    data["suggested_response"] = sr
+        data["suggested_response"] = sr
         if not sr or sr in prev_sugg:
             data["suggested_response"] = _fallback(
                 message, analysis, seen, agent_message, kb
