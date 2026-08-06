@@ -124,27 +124,56 @@ export function CoachingFeed({ coaching, risk, onUseSuggestion }: Props) {
 
       </div>
 
-      {/* Suggested response */}
-      <CollapsibleCard
-        icon={MessageSquareQuote}
-        title="Suggested response"
-        tone="primary"
-        defaultOpen
-      >
-        <p className="wrap-anywhere whitespace-pre-wrap text-sm leading-relaxed text-foreground/95">
-          {coaching.suggested_response}
-        </p>
-        {onUseSuggestion && (
+      {/* AI Draft Response — a real, sendable customer reply (not coaching) */}
+      <div className="rounded-2xl border border-primary/25 bg-primary/[0.04] p-5 shadow-sm">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand text-primary-foreground">
+              <MessageSquareQuote className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold tracking-tight">AI Draft Response</div>
+              <p className="text-[11px] leading-tight text-muted-foreground">
+                Ready to send to the customer — review, edit, then reply.
+              </p>
+            </div>
+          </div>
           <Button
             size="sm"
             variant="outline"
-            className="mt-4 w-full"
+            className="shrink-0 gap-1.5"
+            onClick={() => {
+              void navigator.clipboard
+                ?.writeText(coaching.suggested_response)
+                .then(() => setCopied(true))
+                .catch(() => setCopied(false));
+            }}
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
+            {copied ? "Copied" : "Copy"}
+          </Button>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="wrap-anywhere whitespace-pre-wrap text-sm leading-relaxed text-foreground/95">
+            {coaching.suggested_response}
+          </p>
+        </div>
+        {onUseSuggestion && (
+          <Button
+            size="sm"
+            className="mt-4 w-full bg-brand text-primary-foreground hover:opacity-90"
             onClick={() => onUseSuggestion(coaching.suggested_response)}
           >
-            Use this response
+            Use this reply
           </Button>
         )}
-      </CollapsibleCard>
+      </div>
+
+      <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <Award className="h-3.5 w-3.5" />
+        Coaching analysis
+      </div>
+
 
       <CollapsibleCard icon={TypeIcon} title="Tone analysis" tone="primary">
         <NoteList items={[coaching.tone_improvement, ...(coaching.tone_notes ?? [])].filter(Boolean) as string[]} />
