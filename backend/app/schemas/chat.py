@@ -91,6 +91,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     role: Literal["customer", "agent"]
+    agent_name: str | None = None
 
 
 class AgentTraceEntry(BaseModel):

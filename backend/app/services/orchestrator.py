@@ -114,6 +114,7 @@ def _pipeline(
     trace: list[AgentTraceEntry],
     session_id: str | None = None,
     ctx: dict[str, Any] | None = None,
+    agent_name: str | None = None,
 ) -> tuple[IntentAnalysis, list[RetrievedChunk], list[dict], EscalationRisk, CoachingSuggestion]:
     """Intent -> Knowledge -> Coaching -> Escalation, with full trace recording."""
     ctx = ctx if ctx is not None else _session_context(session_id)
@@ -167,6 +168,7 @@ def _pipeline(
             knowledge_titles=[c.title for c in knowledge],
             knowledge_previews=[getattr(c, "content", "") or "" for c in knowledge],
             agent_message=str(ctx.get("last_agent_message") or ""),
+            agent_name=agent_name,
 
         ),
         lambda c: (
@@ -241,7 +243,7 @@ def handle_chat(
     # analyze the incoming customer message through the full pipeline.
     if req.role == "customer" or mode in ("manual", "replay"):
         analysis, knowledge, kb_docs, risk, coaching = _pipeline(
-            req.message, trace, req.session_id, ctx
+            req.message, trace, req.session_id, ctx, agent_name=req.agent_name
         )
         return ChatTurnResponse(
             turn=turn,
@@ -292,7 +294,7 @@ def handle_chat(
     simulated = _new_msg("customer", simulated_content)
 
     analysis, knowledge, kb_docs, risk, coaching = _pipeline(
-        simulated_content, trace, req.session_id, ctx
+        simulated_content, trace, req.session_id, ctx, agent_name=req.agent_name
     )
     return ChatTurnResponse(
         turn=turn,
