@@ -169,6 +169,7 @@ def coach(
     knowledge_titles: Iterable[str] | None = None,
     agent_message: str = "",
     knowledge_previews: Iterable[str] | None = None,
+    agent_name: str | None = None,
 ) -> CoachingSuggestion:
     hist_txt = ""
     if history:
@@ -180,36 +181,38 @@ def coach(
     seen = set(prev_sugg) | set(prev_tips)
 
     prompt = (
-        f"""Customer Name: UNKNOWN (Do NOT invent one. Use a name only if explicitly present in the customer message or history.)
-
-Order ID: UNKNOWN (Do NOT invent one. Use only if provided by the customer or conversation history.)
-Transaction ID: UNKNOWN (Do NOT invent one.)
-
-IMPORTANT:
-
-- The suggested_response must NEVER contain any customer name.
-- Never greet the customer.
-- Begin immediately with the solution.
-- Never write:
-  - Hi John
-  - Hello Sarah
-  - Thanks Marcus
-  - I appreciate your patience, Daniel
-- Never invent order IDs.
-- Never invent transaction IDs.
-- Never invent policy names.
-- Even if a customer name exists in the conversation, do NOT mention it.
-- Start directly with the resolution.
-- Use only names, IDs or dates that appear in the conversation or retrieved knowledge.
-"""
-
+        f"agent_name: {agent_name or '(not provided)'}\n"
+        "Customer name: UNKNOWN unless it appears verbatim in the conversation below.\n"
+        "Order ID / Transaction ID / tracking number: UNKNOWN unless present below.\n"
+        "Never invent names, IDs, products, policies, dates or timelines. Never use "
+        "agent_name as the customer's name and never place agent_name inside "
+        "suggested_response — it may only appear in coaching feedback.\n\n"
         + f'Customer message: """{message}"""\n'
         + f'Support agent reply: """{agent_message or "(none)"}"""\n'
         + f"Detected intent: {analysis.intent}\n"
         + f"Sentiment: {analysis.sentiment} (score={analysis.sentiment_score})\n"
         + f"Frustration: {analysis.frustration}, Urgency: {analysis.urgency}\n"
         + f"Retrieved knowledge: {', '.join(kb) if kb else '(none)'}\n"
+        + (
+            "Knowledge excerpts:\n" + "\n".join(f"- {t}" for t in kb_prev[:3]) + "\n"
+            if kb_prev
+            else ""
+        )
         + f"\nConversation history:\n{hist_txt or '(none)'}\n"
+        + (
+            "\nPrevious suggested responses (do NOT repeat wording):\n"
+            + "\n".join(f"- {p}" for p in prev_sugg[-5:])
+            + "\n"
+            if prev_sugg
+            else ""
+        )
+        + (
+            "\nPrevious coaching tips already shown (rotate to fresh angles):\n"
+            + "\n".join(f"- {t}" for t in prev_tips[-8:])
+            + "\n"
+            if prev_tips
+            else ""
+        )
     )
 
     data = generate_json(prompt, system=SYSTEM)
