@@ -103,6 +103,8 @@ export const api = {
     session_id: string;
     message: string;
     role: "customer" | "agent";
+    /** Name of the signed-in support rep; used in coaching feedback only. */
+    agent_name?: string;
   }): Promise<ChatTurnResponse> {
     if (USING_MOCKS) return mock(mockChatTurn(payload), 700);
     return req("/chat", { method: "POST", body: JSON.stringify(payload) });

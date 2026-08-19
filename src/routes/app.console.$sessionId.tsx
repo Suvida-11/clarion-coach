@@ -75,6 +75,7 @@ type RightTab = "knowledge" | "escalation";
 
 function Console() {
   const { sessionId } = Route.useParams();
+  const currentUser = useCurrentUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [latest, setLatest] = useState<ChatTurnResponse | null>(null);
@@ -116,7 +117,12 @@ function Console() {
     setInput("");
     setLoading(true);
     try {
-      const resp = await api.chat({ session_id: sessionId, message: text, role: "agent" });
+      const resp = await api.chat({
+        session_id: sessionId,
+        message: text,
+        role: "agent",
+        agent_name: currentUser?.name,
+      });
       setMessages((m) => [...m, resp.turn]);
       setLatest(resp);
       setAnalysisHistory((h) => [...h, resp]);
