@@ -685,6 +685,8 @@ interface SimState {
   facts: SessionFacts;
   /** Concrete commitments the agent made — the customer remembers these. */
   promises: string[];
+  /** Everything the customer has actually said, used to ground draft replies. */
+  said: string;
 }
 
 const FIRST_NAMES = [
@@ -716,6 +718,7 @@ function stateFor(sessionId: string): SimState {
       scores: [],
       facts: newFacts(),
       promises: [],
+      said: "",
     };
     simStates.set(sessionId, s);
   }
@@ -1066,6 +1069,7 @@ function buildCoaching(
   evalResult: ReturnType<typeof evaluateAgentMessage>,
   kbTitles: string[],
   substitute: (t: string) => string,
+  draftSubstitute: (t: string) => string = substitute,
 ): CoachingSuggestion {
   const stage = state.turn <= 1 ? 0 : state.turn <= 3 ? 1 : 2;
   const reasonBits: string[] = [];
@@ -1076,7 +1080,7 @@ function buildCoaching(
   if (!reasonBits.length) reasonBits.push("the reply was empathetic, specific and grounded in the retrieved policy");
 
   return {
-    suggested_response: buildDraftReply(issue, state, substitute, kbTitles),
+    suggested_response: buildDraftReply(issue, state, draftSubstitute, kbTitles),
     tone_notes: [
       pb.coaching[stage % pb.coaching.length],
       pb.coaching[(stage + 1) % pb.coaching.length],
@@ -1144,6 +1148,21 @@ export function mockChatTurn(payload: {
   let line = composeCustomerLine(stagePool, calming, state, substitute);
   line = (PERSONA_VOICE[persona] ?? ((s: string) => s))(line);
 
+  // Track what the customer has disclosed so the draft reply can never invent a
+  // name, order ID or transaction ID that hasn't been mentioned yet.
+  if (payload.role === "customer") state.said += ` ${payload.message}`;
+  state.said += ` ${line}`;
+  const disclosed = (v: string) => Boolean(v) && state.said.toLowerCase().includes(v.toLowerCase());
+  const draftSubstitute = (t: string) =>
+    t
+      .replace(/\{product\}/g, product)
+      .replace(/\{order\}/g, disclosed(state.facts.order) ? state.facts.order : "your order")
+      .replace(/\{txn\}/g, disclosed(state.facts.txn) ? state.facts.txn : "that payment")
+      .replace(/Hi \{name\}, /g, disclosed(state.facts.name) ? `Hi ${state.facts.name}, ` : "Hi — ")
+      .replace(/, \{name\}/g, disclosed(state.facts.name) ? `, ${state.facts.name}` : "")
+      .replace(/\{name\}/g, disclosed(state.facts.name) ? state.facts.name : "there")
+      .replace(/\{days\}/g, String(state.facts.days));
+
   const simulatedCustomer =
     payload.role === "agent"
       ? {
@@ -1156,7 +1175,7 @@ export function mockChatTurn(payload: {
 
   const frustration = Number(state.frustration.toFixed(2));
   const sentimentScore = Number((0.85 - frustration * 1.7).toFixed(2));
-  const coaching = buildCoaching(pb, issue, state, evalResult, kbTitles, substitute);
+  const coaching = buildCoaching(pb, issue, state, evalResult, kbTitles, substitute, draftSubstitute);
 
   const probability = Number(Math.max(0.05, Math.min(0.96, frustration * 0.95 * difficultyWeight)).toFixed(2));
   const level: "low" | "medium" | "high" | "critical" =
