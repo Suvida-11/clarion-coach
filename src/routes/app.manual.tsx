@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCurrentUser } from "@/lib/user";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -56,6 +57,7 @@ interface HistoryItem {
 }
 
 function ManualMode() {
+  const currentUser = useCurrentUser();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,12 @@ function ManualMode() {
         sid = sess.id;
         setSessionId(sid);
       }
-      const resp = await api.chat({ session_id: sid, message, role: "customer" });
+      const resp = await api.chat({
+        session_id: sid,
+        message,
+        role: "customer",
+        agent_name: currentUser?.name,
+      });
       setResult(resp);
       recordSnapshot(sid, "manual", resp);
       setHistory((h) => [
