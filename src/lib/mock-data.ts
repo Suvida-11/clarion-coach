@@ -967,78 +967,80 @@ const DRAFT_OPENERS = [
 ];
 
 const DRAFT_CLOSERS = [
-  "You'll get a confirmation email with the reference within the next hour, and I'll stay on this until it's closed.",
+  "Once it's actioned you'll get written confirmation with the reference, and I'll stay on this until it's closed.",
   "I'll follow up personally tomorrow morning so you don't have to chase us again.",
   "If anything looks different on your side, just reply here and it comes straight back to me.",
-  "I've added a note to your account so any colleague picking this up has the full history.",
-  "You'll have written confirmation of all of this so you've got a record.",
+  "I'm adding a note to your account so any colleague picking this up has the full history.",
+  "You'll have written confirmation of whatever we agree, so you've got a record.",
 ];
 
+// Drafts describe what the agent CAN do next. They never claim an action has
+// already been completed, because no backend action has been performed.
 const DRAFT_BODIES: Record<IssueKey, string[]> = {
   refund: [
-    "I've approved the full refund on {order} now — it leaves us today and lands back on your original card within 3–5 working days.",
-    "Rather than wait for the returns team, I've issued the refund for {order} directly and waived the return postage.",
-    "The refund on {order} was stuck at an approval step; I've cleared it myself and it's processing as we speak.",
+    "I can start the full refund on {order} straight away — once it's raised it returns to your original card, and I'll confirm here the moment it's submitted.",
+    "Rather than leave this with the returns queue, I can put the refund for {order} through myself and ask for the return postage to be waived.",
+    "It looks like the refund on {order} is sitting at an approval step — I can push it forward now and tell you exactly where it stands.",
   ],
   payment: [
-    "I can see two authorisations against {txn} — the duplicate has been voided and the held amount is released back to you within 48 hours.",
-    "The second charge on {txn} never settled, so I've cancelled it at our end and requested an immediate release from the bank.",
-    "I've refunded the duplicate payment on {txn} today and flagged the card record so it can't happen again on your next order.",
+    "I can see the charge you're describing on {txn} — I can request that the duplicate authorisation is voided so the held amount is released back to you.",
+    "If the second charge on {txn} hasn't settled, I can cancel it at our end and ask the bank for a release; I'll confirm what they come back with.",
+    "I can raise the duplicate payment on {txn} for refund and flag the card record so it doesn't repeat on your next order.",
   ],
   tracking: [
-    "Tracking for {order} stalled at the sorting hub — I've asked the carrier for a live scan and booked a redelivery for tomorrow.",
-    "I can see {order} hasn't moved for {days} days, so I've raised a replacement shipped overnight rather than waiting on the search.",
-    "Your parcel {order} is at the local depot; I've upgraded it to next-day and you'll get a new tracking link tonight.",
+    "Tracking for {order} looks stalled at the sorting hub — I can ask the carrier for a live scan and request a redelivery slot that suits you.",
+    "{order} hasn't moved for {days} days, so instead of waiting on the search I can look at raising a replacement for you.",
+    "It looks like {order} is sitting at the local depot; I can ask for it to be prioritised and get an updated tracking link sent to you.",
   ],
   delivery: [
-    "I've escalated {order} to overnight delivery at no cost, so it reaches you before your deadline.",
-    "The delay on {order} is on us — it ships today on a priority service and I've added a credit to your account.",
-    "I've moved {order} to our fastest service and confirmed the courier collection for this afternoon.",
+    "I can request a faster service on {order} at no cost to you so it has the best chance of arriving before your deadline.",
+    "The delay on {order} is on us — I can ask for it to go out on a priority service and look at what we can do to make up for it.",
+    "I can request our fastest available service for {order} and check with the courier when collection is scheduled.",
   ],
   account: [
-    "I've unlocked your account and cleared the failed attempts — you can sign in straight away with your existing password.",
-    "Your account was locked by our security rules after repeated attempts; I've released it and sent a fresh secure link to your email.",
-    "I've reset the lock on your account and extended the session timeout so this doesn't repeat.",
+    "I can look at the lock on your account and clear the failed attempts so you can sign in with your existing password.",
+    "Account locks like this are usually our security rules after repeated attempts — I can request the release and walk you through signing in.",
+    "I can ask for the lock to be lifted and check the session settings so this doesn't keep happening.",
   ],
   password: [
-    "I've sent a new reset link that's valid for 30 minutes — open it on the same device and it will take you straight to a new password.",
-    "The old reset email had expired. A new one is on its way now; if it isn't there in two minutes, check the promotions folder and tell me.",
-    "I've cleared the stuck reset request and triggered a fresh one, so the link you get next will work first time.",
+    "I can walk you through requesting a fresh reset link and stay with you while you open it, so we know it works this time.",
+    "If the earlier reset email has expired, the next one should arrive within a couple of minutes — check the promotions folder and tell me either way.",
+    "I can look at why the reset request is getting stuck and guide you through it step by step until you're back in.",
   ],
   subscription: [
-    "Your subscription is cancelled from today, and I've refunded the charge taken on {txn} since you cancelled before using the period.",
-    "I've cancelled the renewal and confirmed nothing further will be taken; your access runs until the end of the paid period.",
-    "The cancellation is now on your account, and I've stopped the upcoming payment so you won't see another charge.",
+    "I can process the cancellation from today and check whether the charge on {txn} qualifies to come back to you.",
+    "I can stop the renewal so nothing further is taken, and confirm how long your access runs.",
+    "I can put the cancellation through and check the upcoming payment so you're not charged again.",
   ],
   damaged: [
-    "That's not the condition {product} should arrive in — a replacement is dispatched today and there's no need to return the damaged one.",
-    "I've raised a free replacement for {order} on next-day delivery and logged the damage with our packing team.",
-    "I've arranged a like-for-like replacement of {product} plus a prepaid label if you'd rather have the refund instead.",
+    "That's not the condition {product} should arrive in — I can arrange a replacement and check whether you need to return the damaged one at all.",
+    "I can request a free replacement for {order} on the quickest service available and log the damage with our packing team.",
+    "I can look at a like-for-like replacement of {product}, or a refund with a prepaid label if you'd prefer that instead.",
   ],
   technical: [
-    "As an immediate workaround, sign out and back in once — that clears the cached token. I've also raised the underlying bug with engineering under {order}.",
-    "This is a known issue in the current build; updating to the latest version fixes it, and I'll confirm here once the permanent patch ships.",
-    "I've reproduced the error on my side, so it isn't your setup. Engineering has it now and I'll update you within 24 hours.",
+    "As an immediate workaround, sign out and back in once — that clears the cached token. I can also raise the underlying issue with engineering and reference {order}.",
+    "This looks like a known issue in the current build; updating to the latest version usually clears it, and I'll confirm here once I know more about a permanent fix.",
+    "Let me try to reproduce the error on my side so we can rule out your setup, then get engineering involved and come back to you within 24 hours.",
   ],
   billing: [
-    "I've corrected the invoice on {txn} and the difference is credited back to you today — a revised invoice is on its way.",
-    "The extra amount on {txn} was a tax rate applied in error; it's refunded and I've fixed the rate on your account.",
-    "I've reissued the invoice with the right figures and adjusted your next bill so nothing carries over.",
+    "I can raise the invoice on {txn} for correction and ask for the difference to be credited back to you, then send a revised invoice.",
+    "The extra amount on {txn} looks like a rate applied in error — I can request the correction and check the rate on your account.",
+    "I can request a reissued invoice with the right figures and check your next bill so nothing carries over.",
   ],
   shipping: [
-    "You shouldn't have been charged express shipping for a standard delivery — I've refunded that charge on {order} today.",
-    "I've refunded the shipping cost on {order} and switched your account to free delivery on the next order.",
-    "The shipping fee on {order} is being returned to your card, and I've corrected the option that caused it.",
+    "You shouldn't have been charged express shipping for a standard delivery — I can raise that charge on {order} for refund.",
+    "I can request the shipping cost on {order} back and look at the delivery option set on your account.",
+    "I can put the shipping fee on {order} forward for refund and check what caused the wrong option to apply.",
   ],
   vip: [
-    "As a priority account this should never have taken {days} days — I've assigned a named contact and pushed {order} to the front of the queue.",
-    "I've escalated {order} to our senior team and applied a goodwill credit to your account for the disruption.",
-    "I'm handling {order} personally from here, with a direct line to the fulfilment lead so nothing stalls again.",
+    "As a priority account this should never have taken {days} days — I can get a named contact assigned and ask for {order} to be prioritised.",
+    "I can escalate {order} to our senior team and ask what we can do to make up for the disruption.",
+    "I'll handle {order} personally from here and check in with the fulfilment lead so it doesn't stall again.",
   ],
   complaint: [
-    "You've had to repeat yourself and that's a failure on our side — I've taken ownership of {order} and logged a formal complaint reference for you.",
-    "I've raised this with the team lead, and you'll hear from us with an outcome rather than another holding message.",
-    "I've documented everything that's happened with {order} so you don't have to explain it again to anyone else.",
+    "You've had to repeat yourself and that's a failure on our side — I'll take ownership of {order} and can raise a formal complaint on your behalf.",
+    "I can take this to the team lead so you get an outcome rather than another holding message.",
+    "I'll document everything that's happened with {order} so you don't have to explain it again to anyone else.",
   ],
 };
 
@@ -1052,7 +1054,7 @@ function buildDraftReply(
   const action = pickFresh(DRAFT_BODIES[issue], state.usedCoaching);
   const closer = pickFresh(DRAFT_CLOSERS, state.usedCoaching);
   const grounded = kbTitles[0]
-    ? ` This follows our "${kbTitles[0]}" policy, so it's already approved.`
+    ? ` I'm working from our "${kbTitles[0]}" guidance here, so you're getting the same answer anyone else would give you.`
     : "";
   return substitute(`${opener}\n\n${action}${grounded}\n\n${closer}`);
 }
