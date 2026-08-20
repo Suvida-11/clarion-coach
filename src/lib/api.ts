@@ -51,15 +51,33 @@ export const USING_MOCKS = !BASE_URL;
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   if (!BASE_URL) throw new Error("VITE_API_BASE_URL not set");
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-  return (await res.json()) as T;
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...init,
+      signal: AbortSignal.timeout(60_000),
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch (e) {
+    const timedOut = e instanceof DOMException && e.name === "TimeoutError";
+    throw new Error(
+      timedOut
+        ? `The backend took too long to respond (${path}). Please retry.`
+        : `Cannot reach the backend at ${BASE_URL}. Is the FastAPI server running?`,
+    );
+  }
+  if (!res.ok) {
+    const body = (await res.text()).slice(0, 300);
+    throw new Error(`Backend error ${res.status} on ${path}${body ? `: ${body}` : ""}`);
+  }
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new Error(`Backend returned an invalid response for ${path}.`);
+  }
 }
 
 // Small artificial delay for mocks so loading skeletons are visible.
