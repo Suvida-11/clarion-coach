@@ -150,7 +150,10 @@ export const api = {
       });
     const fd = new FormData();
     fd.append("file", file);
-    return fetch(`${BASE_URL}/knowledge/upload`, { method: "POST", body: fd }).then((r) => r.json());
+    return fetch(`${BASE_URL}/knowledge/upload`, { method: "POST", body: fd }).then(async (r) => {
+      if (!r.ok) throw new Error(`Upload failed (${r.status}): ${(await r.text()).slice(0, 200)}`);
+      return (await r.json()) as KnowledgeDocument;
+    });
   },
 
   knowledgeDelete(id: string): Promise<{ ok: true }> {
